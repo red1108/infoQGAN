@@ -1,0 +1,23 @@
+    def generate_biased_X(self):
+        # Generate uniform points along two lines at 45 and 135 degrees centered at (0.3, 0.3)
+        thickness = 0.05  # Increase thickness for both lines
+        
+        # First line at 45 degrees (y = x)
+        xx1 = np.random.uniform(0.2, 0.4, self.data_num // 2) + thickness * np.random.randn(self.data_num // 2)
+        yy1 = xx1 + thickness * np.random.randn(self.data_num // 2)
+        
+        # Second line at 135 degrees (y = -x + offset)
+        xx2 = np.random.uniform(0.2, 0.4, self.data_num // 2) + thickness * np.random.randn(self.data_num // 2)
+        yy2 = -xx2 + 0.6 + thickness * np.random.randn(self.data_num // 2)
+        
+        # Shift to center at (0.3, 0.3)
+        xx1 += 0.1
+        yy1 += 0.1
+        xx2 += 0.1
+        yy2 += 0.1
+        
+        # Combine the two line segments
+        xx = np.concatenate((xx1, xx2))
+        yy = np.concatenate((yy1, yy2))
+        
+        return self._combine_and_shuffle(xx, yy)

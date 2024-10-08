@@ -29,6 +29,12 @@ class PointGenerator:
 
         return self._combine_and_shuffle(xx, yy)
 
+    def generate_biased_curve(self):
+        xx = np.linspace(0.1, 0.5, self.data_num)  # 범위 조정
+        yy = 7 * (xx - 0.3) * (xx - 0.3) + 0.1 + (0.1 * np.random.rand(self.data_num) - 0.03)  # 중심을 x=0.3으로 이동
+        
+        return self._combine_and_shuffle(xx, yy)
+
     def generate_bar(self):
         # 중심 (0.5, 0.5)에서 살짝 벗어나 있는 얇은 막대기 분포 생성
         xx = np.random.uniform(0.3, 0.8, self.data_num) + 0.012 * np.random.randn(self.data_num)  # x 좌표 계산 (좁은 범위)
