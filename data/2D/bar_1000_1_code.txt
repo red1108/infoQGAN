@@ -1,0 +1,5 @@
+    def generate_bar(self):
+        # 중심 (0.5, 0.5)에서 살짝 벗어나 있는 얇은 막대기 분포 생성
+        xx = np.random.uniform(0.3, 0.8, self.data_num) + 0.012 * np.random.randn(self.data_num)  # x 좌표 계산 (좁은 범위)
+        yy = np.random.uniform(0.6, 0.7, self.data_num) + 0.012 * np.random.randn(self.data_num)  # y 좌표 계산 (좁은 범위)
+        return self._combine_and_shuffle(xx, yy)

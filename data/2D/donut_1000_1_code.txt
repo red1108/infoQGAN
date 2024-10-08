@@ -1,0 +1,12 @@
+    def generate_biased_donut(self):
+        # Generate random angles
+        angles = np.random.uniform(0, 2 * np.pi, self.data_num)
+        
+        # Generate random radii uniformly between inner and outer radius
+        radii = np.sqrt(np.random.uniform(0.15**2, 0.3**2, self.data_num))
+        
+        # Calculate x and y coordinates based on polar coordinates
+        xx = 0.4 + radii * np.cos(angles)
+        yy = 0.4 + radii * np.sin(angles)
+
+        return self._combine_and_shuffle(xx, yy)

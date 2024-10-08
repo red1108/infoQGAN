@@ -1,0 +1,10 @@
+    def generate_circle(self):
+        # 중심 (0.4, 0.4) 반지름 0.2 내부에서 uniform 해야 함
+        
+        theta = np.random.uniform(0, 2 * np.pi, self.data_num)
+        # Generate random radii with correct distribution for uniformity
+        r = 0.2 * np.sqrt(np.random.uniform(0, 1, self.data_num))
+        # Convert polar coordinates to Cartesian coordinates
+        xx = 0.4 + r * np.cos(theta) + 0.012 * np.random.randn(self.data_num)
+        yy = 0.4 + r * np.sin(theta) + 0.012 * np.random.randn(self.data_num)
+        return self._combine_and_shuffle(xx, yy)
