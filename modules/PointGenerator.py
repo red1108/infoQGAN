@@ -61,6 +61,23 @@ class PointGenerator:
         xx = np.array(xx)
         yy = np.array(yy)
         return self._combine_and_shuffle(xx, yy)
+
+
+    def generate_circle2(self):
+        # 중심 (0.3, 0.3) 반지름 0.25 내부에서 uniform 해야 함
+        
+        xx = []
+        yy = []
+        while len(xx) < self.data_num:
+            x = np.random.uniform(0, 1)  # 원을 포함하는 사각형 내에서 x 좌표 생성
+            y = np.random.uniform(0, 1)  # 원을 포함하는 사각형 내에서 y 좌표 생성
+            if (x - 0.3) ** 2 + (y - 0.3) ** 2 <= 0.25 ** 2:
+                # 원 내부에 있는 경우에만 추가
+                xx.append(x + 0.012 * np.random.rand())
+                yy.append(y + 0.012 * np.random.rand())
+        xx = np.array(xx)
+        yy = np.array(yy)
+        return self._combine_and_shuffle(xx, yy)
     
     def generate_double_circle(self):
         # 원 1: 중심 (0.4, 0.4), 반지름 0.1 내부에서 uniform 해야 함
