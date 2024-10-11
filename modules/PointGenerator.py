@@ -15,6 +15,11 @@ class PointGenerator:
         xx = np.random.uniform(0.3, 0.7, self.data_num) + 0.012 * np.random.randn(self.data_num)  # x 좌표 계산
         yy = np.random.uniform(0.3, 0.7, self.data_num) + 0.012 * np.random.randn(self.data_num)  # y 좌표 계산
         return self._combine_and_shuffle(xx, yy)
+
+    def generate_biased_box(self):
+        xx = np.random.uniform(0.5, 0.9, self.data_num) # x 좌표 계산
+        yy = np.random.uniform(0.5, 0.9, self.data_num)  # y 좌표 계산
+        return self._combine_and_shuffle(xx, yy)
     
     def generate_biased_donut(self):
         # Generate random angles
