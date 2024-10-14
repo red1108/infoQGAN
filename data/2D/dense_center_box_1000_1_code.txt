@@ -1,0 +1,19 @@
+    def generate_dense_center_box(self):
+        # 전체 데이터의 절반을 중심 영역에서 생성하고, 나머지 절반을 주변에서 생성
+        center_data_num = self.data_num//2
+        outer_data_num = self.data_num//2
+
+        # 중심 영역에서 데이터 생성
+        xx_center = np.random.uniform(0.4, 0.6, center_data_num)
+        yy_center = np.random.uniform(0.4, 0.6, center_data_num)
+
+        # 전체 범위에서 데이터 생성
+        xx_outer = np.random.uniform(0.3, 0.7, outer_data_num)
+        yy_outer = np.random.uniform(0.3, 0.7, outer_data_num)
+
+        # 중심 영역과 주변 영역 데이터를 결합
+        xx = np.concatenate((xx_center, xx_outer))
+        yy = np.concatenate((yy_center, yy_outer))
+
+        # 데이터 셔플
+        return self._combine_and_shuffle(xx, yy)
