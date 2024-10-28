@@ -1,2 +1,4 @@
 runs
 visualize/tmp # 여기에 이미지 생성 후, 건질만한 것들 visualize로 이동시켜 주세요.
+venv
+test.ipynb
