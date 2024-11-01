@@ -12,7 +12,7 @@ class Autoencoder(nn.Module):
             nn.ReLU(),
             nn.Flatten(),
             nn.Linear(8 * 7 * 7, latent_dim),
-            nn.Tanh()  # -1 ~ 1로 출력 제한
+            nn.Sigmoid()  # 0 ~ 1로 출력 제한
         )
         
         # Decoder
@@ -28,6 +28,5 @@ class Autoencoder(nn.Module):
         
     def forward(self, x):
         latent = self.encoder(x)
-        latent = (latent + 1) / 2  # -1 ~ 1을 0 ~ 1로 스케일링
         reconstructed = self.decoder(latent)
         return reconstructed
