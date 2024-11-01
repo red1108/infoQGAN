@@ -32,6 +32,7 @@ class QGAN:
             qml.CNOT(wires=[i, (i+1)%self.n_qubits])
 
     def circuit(self, generator_input):
+        # output dimension: 2**output_qubits
 
         self.init_circuit(generator_input)
 
