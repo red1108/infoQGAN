@@ -1,18 +1,19 @@
+import torch
 import torch.nn as nn
 
-# 오토인코더 정의
 class Autoencoder(nn.Module):
-    def __init__(self, latent_dim=40):
+    def __init__(self, latent_dim):
         super(Autoencoder, self).__init__()
         # Encoder
         self.encoder = nn.Sequential(
             nn.Conv2d(1, 16, kernel_size=3, stride=2, padding=1),
-            nn.ReLU(),
+            nn.Tanh(),
             nn.Conv2d(16, 8, kernel_size=3, stride=2, padding=1),
-            nn.ReLU(),
+            nn.Tanh(),
             nn.Flatten(),
             nn.Linear(8 * 7 * 7, latent_dim),
-            nn.Sigmoid()  # 0 ~ 1로 출력 제한
+            nn.Tanh(),
+            nn.Softmax()
         )
         
         # Decoder
@@ -23,7 +24,7 @@ class Autoencoder(nn.Module):
             nn.ConvTranspose2d(8, 16, kernel_size=3, stride=2, padding=1, output_padding=1),
             nn.ReLU(),
             nn.ConvTranspose2d(16, 1, kernel_size=3, stride=2, padding=1, output_padding=1),
-            nn.Sigmoid()  # 복원된 이미지를 0~1로 제한
+            nn.Sigmoid()
         )
         
     def forward(self, x):
