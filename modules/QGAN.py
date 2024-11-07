@@ -1,8 +1,6 @@
 import pennylane as qml
 import torch
 import numpy as np
-import torch
-from torch.autograd import Variable
 
 class QGAN:
     def __init__(self, n_qubits, output_qubits, n_layers, params, dev):

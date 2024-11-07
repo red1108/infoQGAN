@@ -18,6 +18,7 @@ class Autoencoder(nn.Module):
             nn.Flatten(),
             nn.Linear(8 * 28 * 28, latent_dim),  # 입력 크기를 8 * 28 * 28로 수정
             AbsoluteValueLayer(),  # 양수로 만드는 레이어 추가
+            
             NormalizeLayer()
         )
         
