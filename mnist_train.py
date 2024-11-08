@@ -133,6 +133,7 @@ if __name__ == "__main__":
     print(f"Discriminator Learning Rate: {D_lr}")
     if use_mine:
         print(f"InfoQGAN coefficient: {coeff}")
+    print(f"Smooth: {smooth}")
     print(f"Epochs: {epochs}")
     print(f"Latent Dimension: {latent_dim}")
     print(f"Number of Images per Class: {num_images_per_class}")
