@@ -40,3 +40,15 @@ INFOQGAN/
 종속성을 설치하려면 다음 명령어를 실행하세요:
 ```bash
 pip install -r requirements.txt
+```
+
+### 실행 방법
+InfoQGAN으로 학습하고 싶은 경우
+```bash
+python mnist_train.py --model_type InfoQGAN --DIGITS_STR 0123456789 --DIGIT 1 --G_lr 0.01 --M_lr 0.0001 --D_lr 0.001 --coeff 0.05 --epochs 300 --latent_dim 16 --num_images_per_class 2000
+```
+
+QGAN으로 학습하고 싶은 경우
+```bash
+python mnist_train.py --model_type QGAN --DIGITS_STR 0123456789 --DIGIT 1 --G_lr 0.01 --M_lr 0.0001 --D_lr 0.001 --coeff 0.05 --epochs 300 --latent_dim 16 --num_images_per_class 2000
+```

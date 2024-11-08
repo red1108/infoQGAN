@@ -1,11 +1,4 @@
-# - latent dim을 32 말고도 쓸 수 있게 바꿈
-# - 분포를 uniform 말고 정규분포로 바꿈
-# 
-# output qubit는 log(latent_dim)이상인 최소의 큐빗 수
-# 출력에서 잘라내야 함.
-
-# python mnist_train.py --G_lr 0.001 --M_lr 0.001 --D_lr 0.001 --epochs 100 --use_mine True
-
+# python mnist_train.py --model_type QGAN --DIGITS_STR 0123456789 --DIGIT 1 --G_lr 0.01 --M_lr 0.0001 --D_lr 0.001 --coeff 0.05 --epochs 300 --latent_dim 16 --num_images_per_class 2000
 
 # Standard Libraries
 import math
