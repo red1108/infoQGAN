@@ -46,6 +46,7 @@ DIGIT = 0
 G_lr = 0.005
 M_lr = 0.0001
 D_lr = 0.001
+smooth = 0.0
 epochs = 100
 latent_dim = 16
 num_images_per_class = 2000
@@ -101,6 +102,7 @@ if __name__ == "__main__":
     parser.add_argument("--M_lr", type=float, default=0.0001, help="Learning rate for mine")
     parser.add_argument("--D_lr", type=float, default=0.001, help="Learning rate for discriminator")
     parser.add_argument("--coeff", type=float, default=0.05, help="Coefficient value used for InfoQGAN (not used for QGAN)")
+    parser.add_argument("--smooth", type=float, default=0.0, help="Discriminator label smoothing (efficient for QGAN)")
     parser.add_argument("--epochs", type=int, required=True, help="Number of epochs")
     parser.add_argument("--latent_dim", type=int, required=True, help="Dimension of latent space")
     parser.add_argument("--num_images_per_class", type=int, default=2000, help="Number of images per class")
@@ -210,7 +212,7 @@ def generator_train_step(generator_input, use_mine = False):
     return generator_output, gan_loss# TODO: 이건 분석용으로 넣어놓음.지워야 함.
 
 disc_loss_fn = nn.BCELoss()
-def disc_cost_fn(real_input, fake_input, smoothing=False):
+def disc_cost_fn(real_input, fake_input):
     batch_num = real_input.shape[0]
 
     disc_real = discriminator(real_input)
@@ -219,8 +221,8 @@ def disc_cost_fn(real_input, fake_input, smoothing=False):
     real_label = torch.ones((batch_num, 1)).to(device)
     fake_label = torch.zeros((batch_num, 1)).to(device)
     
-    if smoothing:
-        real_label = real_label - 0.2*torch.rand(real_label.shape).to(device)
+    if smooth > 0.00001:
+        real_label = real_label - smooth*torch.rand(real_label.shape).to(device)
     
     loss = 0.5 * (disc_loss_fn(disc_real, real_label) + disc_loss_fn(disc_fake, fake_label))
     
@@ -364,7 +366,7 @@ for epoch in range(1, epoch_num+1):
         
         # train discriminator
         fake_input = generator_output.detach().to(torch.float32)
-        disc_loss = disc_cost_fn(batch, fake_input, smoothing=False)
+        disc_loss = disc_cost_fn(batch, fake_input)
         D_opt.zero_grad()
         disc_loss.requires_grad_(True)
         disc_loss.backward()
