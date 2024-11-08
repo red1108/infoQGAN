@@ -13,6 +13,8 @@ visualize/tmp/에 생성된 이미지는 임시 저장용으로 Git에서 무시
 ```bash
 INFOQGAN/
 ├── data/                           # 데이터 관련 파일 저장 폴더
+│   ├── 2D/                         # 2D 학습에 사용되는 데이터
+│   ├── MNIST/                      # MNIST 학습에 사용되는 데이터
 ├── modules/                        # 모델 구성 요소 및 유틸리티 코드 폴더
 │   ├── Discriminator.py            # 판별자(Discriminator) 모델 코드
 │   ├── MINE.py                     # Mutual Information Neural Estimator (MINE) 코드
@@ -20,14 +22,17 @@ INFOQGAN/
 │   ├── QGAN.py                     # QGAN 모델 정의 코드
 │   └── utils.py                    # 유틸리티 함수 모음
 ├── runs/                           # TensorBoard 및 학습 로그 저장 폴더
+├── savepoints/                     # autoencoder 파라미터 저장
 ├── visualize/                      # 이미지 생성 및 시각화 코드 폴더
 │   ├── tmp/                        # 학습 중 생성된 임시 이미지 저장 (Git에서 무시됨)
 │   ├── disentanglement.ipynb 
 │   ├── mode_collapse_box.ipynb 
 │   ├── mode_collapse_diamond_timeline.ipynb
 ├── .gitignore
+├── mnist_train.py                  # (중요) MNIST 학습 수행하는 파이썬 파일
+├── mnist_train.ipynb               # MNIST 학습 수행하는 노트북
 ├── 2D_prepare.ipynb                # 2D 실험 데이터 생성하는 노트북
-├── 2D_train.ipynb              # 2D 실험 학습 노트북
+├── 2D_train.ipynb                  # 2D 실험 학습 노트북
 ├── 2D_run.ipynb                    # 2D 학습 완료된 모델을 불러와서 분포 생성하는 노트북
 ├── README.md                       # 프로젝트 설명 및 사용법이 담긴 README 파일
 ```
