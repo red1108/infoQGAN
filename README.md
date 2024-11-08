@@ -35,6 +35,7 @@ INFOQGAN/
 ├── 2D_train.ipynb                  # 2D 실험 학습 노트북
 ├── 2D_run.ipynb                    # 2D 학습 완료된 모델을 불러와서 분포 생성하는 노트북
 ├── README.md                       # 프로젝트 설명 및 사용법이 담긴 README 파일
+├── requirements.txt                # 파이썬 3.9 기준으로 작성됨.
 ```
 
 ### 요구 사항
