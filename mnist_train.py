@@ -118,10 +118,11 @@ if __name__ == "__main__":
     G_lr = args.G_lr
     M_lr = args.M_lr
     D_lr = args.D_lr
+    coeff = args.coeff
+    smooth = args.smooth
     epochs = args.epochs
     latent_dim = args.latent_dim
     num_images_per_class = args.num_images_per_class
-    coeff = args.coeff
 
     print(f"Use Mine: {use_mine}")
     print(f"DIGITS: {DIGITS}")
