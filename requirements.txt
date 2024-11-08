@@ -1,0 +1,8 @@
+torch           # PyTorch for neural networks
+tqdm            # Progress bar utility
+tensorboard     # For tracking and visualizing metrics
+pennylane       # Quantum machine learning library
+argparse        # Argument parsing library (built-in, but included here for completeness)
+json            # JSON handling (built-in, but included here for completeness)
+scipy           # For scientific computing, e.g., sqrtm function
+pygments        # For syntax highlighting in HTML export
