@@ -356,10 +356,11 @@ for epoch in range(1, epoch_num+1):
     for batch_idx in pbar:
         batch = torch.FloatTensor(train_dataset[BATCH_SIZE * batch_idx : BATCH_SIZE * batch_idx + BATCH_SIZE])
 
-        # train generator
-        mean = 0.0
-        std_dev = 0.1
-        generator_seed = torch.randn((BATCH_SIZE, n_qubits)) * std_dev + mean # 정규분포로 변경. 대략 -0.25 ~ 0.25
+        # # train generator
+        # mean = 0.0
+        # std_dev = 0.1
+        # generator_seed = torch.randn((BATCH_SIZE, n_qubits)) * std_dev + mean # 정규분포로 변경. 대략 -0.25 ~ 0.25
+        generator_seed = torch.empty((BATCH_SIZE, n_qubits)).uniform_(-0.25, 0.25)
         generator_output, generator_loss = generator_train_step(generator_seed, use_mine=use_mine)
         G_opt.zero_grad()
         generator_loss.requires_grad_(True)
