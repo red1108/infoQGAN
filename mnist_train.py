@@ -105,7 +105,7 @@ if __name__ == "__main__":
     parser.add_argument("--coeff", type=float, default=0.05, help="Coefficient value used for InfoQGAN (not used for QGAN)")
     parser.add_argument("--smooth", type=float, default=0.0, help="Discriminator label smoothing (efficient for QGAN)")
     parser.add_argument("--epochs", type=int, required=True, help="Number of epochs")
-    parser.add_argument("--gamma", type=float, default=0.8, help="Learning rate scheduler gamma")
+    parser.add_argument("--gamma", type=float, default=0.8, help="Learning rate scheduler gamma (step = 30 epochs)")
     parser.add_argument("--latent_dim", type=int, required=True, help="Dimension of latent space")
     parser.add_argument("--num_images_per_class", type=int, default=2000, help="Number of images per class")
 
@@ -139,6 +139,7 @@ if __name__ == "__main__":
         print(f"InfoQGAN coefficient: {coeff}")
     print(f"Smooth: {smooth}")
     print(f"Epochs: {epochs}")
+    print(f"Gamma: {gamma}")
     print(f"Latent Dimension: {latent_dim}")
     print(f"Number of Images per Class: {num_images_per_class}")
 
