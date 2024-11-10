@@ -48,6 +48,7 @@ M_lr = 0.0001
 D_lr = 0.001
 smooth = 0.0
 epochs = 100
+gamma = 0.8
 latent_dim = 16
 num_images_per_class = 2000
 coeff = 0.05
@@ -104,6 +105,7 @@ if __name__ == "__main__":
     parser.add_argument("--coeff", type=float, default=0.05, help="Coefficient value used for InfoQGAN (not used for QGAN)")
     parser.add_argument("--smooth", type=float, default=0.0, help="Discriminator label smoothing (efficient for QGAN)")
     parser.add_argument("--epochs", type=int, required=True, help="Number of epochs")
+    parser.add_argument("--gamma", type=float, default=0.8, help="Learning rate scheduler gamma")
     parser.add_argument("--latent_dim", type=int, required=True, help="Dimension of latent space")
     parser.add_argument("--num_images_per_class", type=int, default=2000, help="Number of images per class")
 
@@ -121,6 +123,7 @@ if __name__ == "__main__":
     coeff = args.coeff
     smooth = args.smooth
     epochs = args.epochs
+    gamma = args.gamma
     latent_dim = args.latent_dim
     num_images_per_class = args.num_images_per_class
 
@@ -186,6 +189,9 @@ G_opt = torch.optim.Adam([generator.params], lr=G_lr)
 D_opt = torch.optim.Adam(discriminator.parameters(), lr=D_lr)
 M_opt = torch.optim.Adam(mine.parameters(), lr=M_lr)
 
+G_scheduler = torch.optim.lr_scheduler.StepLR(G_opt, step_size=30, gamma=gamma)
+D_scheduler = torch.optim.lr_scheduler.StepLR(D_opt, step_size=30, gamma=gamma)
+M_scheduler = torch.optim.lr_scheduler.StepLR(M_opt, step_size=30, gamma=gamma)
 
 # 학습에 사용할 train_step과 disc_cost_fn 정의 
 def generator_train_step(generator_input, use_mine = False):
@@ -395,9 +401,9 @@ for epoch in range(1, epoch_num+1):
 
         pbar.set_postfix({'G_loss': G_loss_sum/(batch_idx+1), 'D_loss': D_loss_sum/(batch_idx+1), 'MI': mi_sum/(batch_idx+1)})
 
-    # G_scheduler.step()
-    # D_scheduler.step()
-    # M_scheduler.step()
+    G_scheduler.step()
+    D_scheduler.step()
+    M_scheduler.step()
     
     gen_outputs = np.concatenate(gen_outputs, axis=0) # (train_num, 2**output_qubits)
     gen_codes = np.concatenate(gen_codes, axis=0) # (train_num, code_qubits)
