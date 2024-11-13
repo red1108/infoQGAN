@@ -143,6 +143,7 @@ if __name__ == "__main__":
     print(f"Latent Dimension: {latent_dim}")
     print(f"Number of Images per Class: {num_images_per_class}")
 
+
 # 1. autoencoder 모델 준비
 autoencoder = Autoencoder.Autoencoder(latent_dim=latent_dim)
 autoencoder_epochs = 50
@@ -364,10 +365,10 @@ for epoch in range(1, epoch_num+1):
         batch = torch.FloatTensor(train_dataset[BATCH_SIZE * batch_idx : BATCH_SIZE * batch_idx + BATCH_SIZE])
 
         # # train generator
-        # mean = 0.0
-        # std_dev = 0.1
-        # generator_seed = torch.randn((BATCH_SIZE, n_qubits)) * std_dev + mean # 정규분포로 변경. 대략 -0.25 ~ 0.25
-        generator_seed = torch.empty((BATCH_SIZE, n_qubits)).uniform_(-0.25, 0.25)
+        mean = 0.0
+        std_dev = 0.8
+        generator_seed = torch.randn((BATCH_SIZE, n_qubits)) * std_dev + mean # 정규분포로 변경. 대략 -0.20 ~ 0.20
+        # generator_seed = torch.empty((BATCH_SIZE, n_qubits)).uniform_(-0.25, 0.25)
         generator_output, generator_loss = generator_train_step(generator_seed, use_mine=use_mine)
         G_opt.zero_grad()
         generator_loss.requires_grad_(True)
