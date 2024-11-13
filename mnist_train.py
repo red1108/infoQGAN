@@ -146,7 +146,7 @@ if __name__ == "__main__":
 
 # 1. autoencoder 모델 준비
 autoencoder = Autoencoder.Autoencoder(latent_dim=latent_dim)
-autoencoder_epochs = 50
+autoencoder_epochs = 35
 autoencoder_lr = 0.0001
 autoencoder.load_state_dict(torch.load(f'savepoints/autoencoder_{DIGITS_STR}_{latent_dim}_ep{autoencoder_epochs}_lr{autoencoder_lr}.pth', weights_only=True))
 autoencoder.eval()  # 평가 모드로 전환
