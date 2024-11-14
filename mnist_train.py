@@ -146,7 +146,7 @@ if __name__ == "__main__":
 
 # 1. autoencoder 모델 준비
 autoencoder = Autoencoder.Autoencoder(latent_dim=latent_dim)
-autoencoder_epochs = 35
+autoencoder_epochs = 50
 autoencoder_lr = 0.0001
 autoencoder.load_state_dict(torch.load(f'savepoints/autoencoder_{DIGITS_STR}_{latent_dim}_ep{autoencoder_epochs}_lr{autoencoder_lr}.pth', weights_only=True))
 autoencoder.eval()  # 평가 모드로 전환
@@ -183,7 +183,7 @@ dev = qml.device("default.qubit", wires=n_qubits)
 # 5. 생성자, 판별자, MINE, optimizer 초기화
 generator_initial_params = Variable(torch.tensor(np.random.normal(-np.pi/3, np.pi/3, (n_layers, n_qubits, 1))), requires_grad=True)
 generator = QGAN2.QGAN2(n_qubits, output_qubits, n_layers, generator_initial_params, dev)
-discriminator = Discriminator.LinearDiscriminator(input_dim = latent_dim)
+discriminator = Discriminator.LinearDiscriminator(input_dim = latent_dim, hidden_size=100)
 mine = MINE.LinearMine(code_qubits=code_qubits, output_dim=latent_dim, size=100) # 50 --> 100 변경
 print("n_qubits = {} n_layers = {} 총 파라미터 수 = {}".format(n_qubits, n_layers, generator_initial_params.numel()))
 
