@@ -366,7 +366,7 @@ for epoch in range(1, epoch_num+1):
 
         # # train generator
         mean = 0.0
-        std_dev = 0.8
+        std_dev = 0.08
         generator_seed = torch.randn((BATCH_SIZE, n_qubits)) * std_dev + mean # 정규분포로 변경. 대략 -0.20 ~ 0.20
         # generator_seed = torch.empty((BATCH_SIZE, n_qubits)).uniform_(-0.25, 0.25)
         generator_output, generator_loss = generator_train_step(generator_seed, use_mine=use_mine)
