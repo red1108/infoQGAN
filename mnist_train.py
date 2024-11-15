@@ -359,6 +359,13 @@ writer = SummaryWriter(log_dir=save_dir)
 epoch_num = 300
 start_time = time.time()
 
+def categorical_distribution(A, T, size): # -A ~ A를 내분하는 categorical distribution.
+    if T == 1:
+        categories = [0]
+    else:
+        categories = np.linspace(-A, A, T)
+    return torch.tensor(np.random.choice(categories, size))
+
 for epoch in range(1, epoch_num+1):
     G_loss_sum = 0.0
     D_loss_sum = 0.0
@@ -374,10 +381,10 @@ for epoch in range(1, epoch_num+1):
         batch = torch.FloatTensor(train_dataset[BATCH_SIZE * batch_idx : BATCH_SIZE * batch_idx + BATCH_SIZE])
 
         # # train generator
-        mean = 0.0
-        std_dev = 0.08
-        generator_seed = torch.randn((BATCH_SIZE, n_qubits)) * std_dev + mean # 정규분포로 변경. 대략 -0.20 ~ 0.20
-        # generator_seed = torch.empty((BATCH_SIZE, n_qubits)).uniform_(-0.25, 0.25)
+        SEED_RANGE = 0.25
+        generator_seed = torch.empty((BATCH_SIZE, n_qubits)).uniform_(-SEED_RANGE, SEED_RANGE)
+        # 마지막 code qubit은 -A ~ A를 내분하는 categorical distribution으로 변경
+        generator_seed[:,-1] = categorical_distribution(SEED_RANGE, len(TARGETS), generator_seed.shape[0])
         generator_output, generator_loss = generator_train_step(generator_seed, use_mine=use_mine)
         G_opt.zero_grad()
         generator_loss.requires_grad_(True)
