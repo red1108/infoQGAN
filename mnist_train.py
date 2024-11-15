@@ -40,9 +40,10 @@ import json
 # 전역 변수 선언
 train_type = "InfoQGAN"
 use_mine = True if train_type == "InfoQGAN" else False
-DIGITS = []
 DIGITS_STR = ""
-DIGIT = 0
+DIGITS = []
+TARGETS_STR = ""
+TARGETS = []
 G_lr = 0.005
 M_lr = 0.0001
 D_lr = 0.001
@@ -97,8 +98,8 @@ def visualize_autoencoder(autoencoder, data):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Training parameters")
     parser.add_argument("--model_type", choices=['InfoQGAN', 'QGAN'], required=True, help="Model type to use: InfoQGAN or QGAN")
-    parser.add_argument("--DIGITS_STR", type=str, required=True, help="Autoencoder trained digits")
-    parser.add_argument("--DIGIT", type=int, required=True, help="Target digit")
+    parser.add_argument("--DIGITS", type=str, required=True, help="Autoencoder trained digits")
+    parser.add_argument("--TARGETS", type=int, required=True, help="Target digits")
     parser.add_argument("--G_lr", type=float, default=0.005, help="Learning rate for generator")
     parser.add_argument("--M_lr", type=float, default=0.0001, help="Learning rate for mine")
     parser.add_argument("--D_lr", type=float, default=0.001, help="Learning rate for discriminator")
@@ -114,9 +115,11 @@ if __name__ == "__main__":
 
     train_type = args.model_type
     use_mine = (train_type == 'InfoQGAN')
-    DIGITS = list(map(int, args.DIGITS_STR))
-    DIGITS_STR = args.DIGITS_STR
-    DIGIT = args.DIGIT
+    DIGITS = list(map(int, args.DIGITS))
+    DIGITS_STR = args.DIGITS
+    TARGETS = list(map(int, args.TARGETS))
+    TARGETS_STR = args.TARGETS_STR
+
     G_lr = args.G_lr
     M_lr = args.M_lr
     D_lr = args.D_lr
@@ -129,9 +132,11 @@ if __name__ == "__main__":
 
     print(f"Use Mine: {use_mine}")
     print(f"DIGITS: {DIGITS}")
-    print(f"DIGIT: {DIGIT}")
-    assert DIGIT in DIGITS, f"Error: DIGIT {DIGIT} is not in the list of DIGITS {DIGITS}."
-
+    print(f"TARGETS: {TARGETS}")
+    # assert that TARGETS are in DIGITS
+    for target in TARGETS:
+        assert target in DIGITS, f"Error: TARGET {target} is not in the list of DIGITS {DIGITS}."
+    
     print(f"Generator Learning Rate: {G_lr}")
     print(f"Mine Learning Rate: {M_lr}")
     print(f"Discriminator Learning Rate: {D_lr}")
@@ -161,11 +166,14 @@ visualize_autoencoder(autoencoder, data)
     # 학습 데이터, 테스트 데이터, 검증 데이터를 2:1:1로 나눈다.
     # cpu/gpu 설정 및 quantum device설정
     # n_qubits, code_qubits, noise_qubits, output_qubits 설정
-print("이번 학습으로 생성할 숫자는", DIGIT, "입니다.")
-train_dataset = data[f'{DIGIT}_latent'][:num_images_per_class//2]
-test_dataset = data[f'{DIGIT}_latent'][num_images_per_class//2:num_images_per_class*3//4]
-val_dataset = data[f'{DIGIT}_latent'][num_images_per_class*3//4:]
+print("이번 학습으로 생성할 숫자는", TARGETS, "입니다.")
+# 원래는 DIGIT 하나만이었는데, 이제는 TARGETS 내부 숫자들을 모두 학습해야 한다.
+train_dataset = np.concatenate([data[f'{target}_latent'][:num_images_per_class//2] for target in TARGETS], axis=0)
+test_dataset = np.concatenate([data[f'{target}_latent'][num_images_per_class//2:num_images_per_class*3//4] for target in TARGETS], axis=0)
+val_dataset = np.concatenate([data[f'{target}_latent'][num_images_per_class*3//4:] for target in TARGETS], axis=0)
 train_size, test_size, val_size = len(train_dataset), len(test_dataset), len(val_dataset)
+print("train_size =", train_size, "test_size =", test_size, "val_size =", val_size)
+
 n_qubits = 5
 code_qubits = 2
 noise_qubits = n_qubits - code_qubits
@@ -183,7 +191,7 @@ dev = qml.device("default.qubit", wires=n_qubits)
 # 5. 생성자, 판별자, MINE, optimizer 초기화
 generator_initial_params = Variable(torch.tensor(np.random.normal(-np.pi/3, np.pi/3, (n_layers, n_qubits, 1))), requires_grad=True)
 generator = QGAN2.QGAN2(n_qubits, output_qubits, n_layers, generator_initial_params, dev)
-discriminator = Discriminator.LinearDiscriminator(input_dim = latent_dim, hidden_size=100)
+discriminator = Discriminator.LinearDiscriminator(input_dim = latent_dim, hidden_size=25) # 50 --> 25 변경
 mine = MINE.LinearMine(code_qubits=code_qubits, output_dim=latent_dim, size=100) # 50 --> 100 변경
 print("n_qubits = {} n_layers = {} 총 파라미터 수 = {}".format(n_qubits, n_layers, generator_initial_params.numel()))
 
@@ -253,7 +261,7 @@ def visualize_output_simple(gen_outputs, gen_codes, epoch, writer, image_file_pa
         for j in range(10):
             axs[i, j].imshow(reconstructed[i*10+j].squeeze().detach().numpy(), cmap='gray')
             axs[i, j].axis('off')
-    plt.suptitle(f"DIGIT={DIGIT}/{DIGITS_STR} epoch={epoch} dim={latent_dim}")
+    plt.suptitle(f"TARGETS={TARGETS_STR}/{DIGITS_STR} epoch={epoch} dim={latent_dim}")
     writer.add_figure(f'2D Distribution', fig, epoch)
     fig.savefig(f'{image_file_path}/generated_epoch{epoch:03d}.png')
     plt.close(fig)
@@ -271,7 +279,7 @@ def visualize_output_simple(gen_outputs, gen_codes, epoch, writer, image_file_pa
             for j in range(10):
                 axs[i, j].imshow(sorted_reconstructed[i*10+j].squeeze().detach().numpy(), cmap='gray')
                 axs[i, j].axis('off')
-        plt.suptitle(f"DIGIT={DIGIT} epoch={epoch} dim={latent_dim} code_qubit={q}")
+        plt.suptitle(f"TARGETS={TARGETS_STR} epoch={epoch} dim={latent_dim} code_qubit={q}")
         
         writer.add_figure(f'Sorted by Code Qubit {q}', fig, epoch) # TensorBoard에 기록
         fig.savefig(f'{image_file_path}/sorted_{q}_epoch{epoch:03d}.png') # 이미지 파일로 저장
@@ -279,9 +287,10 @@ def visualize_output_simple(gen_outputs, gen_codes, epoch, writer, image_file_pa
     
     # latent vector의 평균값과 비교
     fig, ax = plt.subplots()
-    ax.plot(data[f'{DIGIT}_latent'].mean(axis=0), label=f"{DIGIT}-latent")
+    for digit in TARGETS:
+        ax.plot(data[f'{digit}_latent'].mean(axis=0), label=f"{digit}-latent")
     ax.plot(gen_outputs.mean(axis=0), label="Generated")
-    ax.set_title(f"Latent compare DIGIT={DIGIT}/{DIGITS_STR} epoch={epoch} dim={latent_dim}")
+    ax.set_title(f"Latent compare TARGETS={TARGETS_STR}/{DIGITS_STR} epoch={epoch} dim={latent_dim}")
     ax.set_xlabel("Dimension")
     ax.set_ylabel("Mean Value")
     ax.legend(title="Category")
@@ -310,8 +319,8 @@ def calculate_frechet_distance(gen_outputs, val_dataset):
 
 
 current_time = datetime.now().strftime("%b%d_%H_%M_%S")  # "Aug13_14_12_30" 형식
-save_dir = f"./runs/MNIST{DIGITS_STR}_{DIGIT}_ld{latent_dim}_{train_type}_{current_time}"
-scalar_save_path = os.path.join(save_dir, f"MNIST{DIGIT}_{train_type}_{current_time}.csv")
+save_dir = f"./runs/MNIST{DIGITS_STR}_{TARGETS_STR}_ld{latent_dim}_{train_type}_{current_time}"
+scalar_save_path = os.path.join(save_dir, f"MNIST{TARGETS_STR}_{train_type}_{current_time}.csv")
 image_save_dir = os.path.join(save_dir, "images")
 param_save_dir = os.path.join(save_dir, "params")
 os.makedirs(image_save_dir, exist_ok=True)
