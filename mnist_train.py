@@ -99,7 +99,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Training parameters")
     parser.add_argument("--model_type", choices=['InfoQGAN', 'QGAN'], required=True, help="Model type to use: InfoQGAN or QGAN")
     parser.add_argument("--DIGITS", type=str, required=True, help="Autoencoder trained digits")
-    parser.add_argument("--TARGETS", type=int, required=True, help="Target digits")
+    parser.add_argument("--TARGETS", type=str, required=True, help="Target digits")
     parser.add_argument("--G_lr", type=float, default=0.005, help="Learning rate for generator")
     parser.add_argument("--M_lr", type=float, default=0.0001, help="Learning rate for mine")
     parser.add_argument("--D_lr", type=float, default=0.001, help="Learning rate for discriminator")
@@ -118,7 +118,7 @@ if __name__ == "__main__":
     DIGITS = list(map(int, args.DIGITS))
     DIGITS_STR = args.DIGITS
     TARGETS = list(map(int, args.TARGETS))
-    TARGETS_STR = args.TARGETS_STR
+    TARGETS_STR = args.TARGETS
 
     G_lr = args.G_lr
     M_lr = args.M_lr
