@@ -47,6 +47,7 @@ TARGETS = []
 G_lr = 0.005
 M_lr = 0.0001
 D_lr = 0.001
+SEED_RANGE = 0.2
 smooth = 0.0
 epochs = 100
 gamma = 0.8
@@ -103,6 +104,7 @@ if __name__ == "__main__":
     parser.add_argument("--G_lr", type=float, default=0.005, help="Learning rate for generator")
     parser.add_argument("--M_lr", type=float, default=0.0001, help="Learning rate for mine")
     parser.add_argument("--D_lr", type=float, default=0.001, help="Learning rate for discriminator")
+    parser.add_argument("--seed", type=float, default=0.2, help="Seed range for generator")
     parser.add_argument("--coeff", type=float, default=0.05, help="Coefficient value used for InfoQGAN (not used for QGAN)")
     parser.add_argument("--smooth", type=float, default=0.0, help="Discriminator label smoothing (efficient for QGAN)")
     parser.add_argument("--epochs", type=int, required=True, help="Number of epochs")
@@ -124,6 +126,7 @@ if __name__ == "__main__":
     M_lr = args.M_lr
     D_lr = args.D_lr
     coeff = args.coeff
+    SEED_RANGE = args.seed
     smooth = args.smooth
     epochs = args.epochs
     gamma = args.gamma
@@ -142,6 +145,7 @@ if __name__ == "__main__":
     print(f"Discriminator Learning Rate: {D_lr}")
     if use_mine:
         print(f"InfoQGAN coefficient: {coeff}")
+    print(f"Seed Range: {SEED_RANGE}")
     print(f"Smooth: {smooth}")
     print(f"Epochs: {epochs}")
     print(f"Gamma: {gamma}")
@@ -381,7 +385,6 @@ for epoch in range(1, epoch_num+1):
         batch = torch.FloatTensor(train_dataset[BATCH_SIZE * batch_idx : BATCH_SIZE * batch_idx + BATCH_SIZE])
 
         # # train generator
-        SEED_RANGE = 0.25
         generator_seed = torch.empty((BATCH_SIZE, n_qubits)).uniform_(-SEED_RANGE, SEED_RANGE)
         # 마지막 code qubit은 -A ~ A를 내분하는 categorical distribution으로 변경
         generator_seed[:,-1] = categorical_distribution(SEED_RANGE, len(TARGETS), generator_seed.shape[0])
