@@ -390,7 +390,7 @@ for epoch in range(1, epoch_num+1):
     gen_outputs = [] # (데이터수, 2) 생성한 모든 점의 좌표들
     gen_codes = [] # (데이터수, 2) 점 찍는데 들어간 code들
 
-    for batch_idx, batch in enumerate(train_loader):
+    for batch_idx, (batch,) in enumerate(train_loader):
         # # train generator
         generator_seed = torch.empty((BATCH_SIZE, n_qubits)).uniform_(-SEED_RANGE, SEED_RANGE)
         # 마지막 code qubit은 -A ~ A를 내분하는 categorical distribution으로 변경
