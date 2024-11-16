@@ -373,6 +373,8 @@ def categorical_distribution(A, T, size): # -A ~ A를 내분하는 categorical d
         categories = np.linspace(-A, A, T)
     return torch.tensor(np.random.choice(categories, size))
 
+import gc
+
 for epoch in range(1, epoch_num+1):
     G_loss_sum = 0.0
     D_loss_sum = 0.0
@@ -420,8 +422,8 @@ for epoch in range(1, epoch_num+1):
         G_loss_sum += generator_loss.item()
         mi_sum -= mi.item() # (-1)곱해져 있어서 빼야함.
 
-        gen_outputs.append(fake_input.numpy())
-        gen_codes.append(code_input.numpy())
+        gen_outputs.append(fake_input.detach().numpy())
+        gen_codes.append(code_input.detach().numpy())
 
         pbar.set_postfix({'G_loss': G_loss_sum/(batch_idx+1), 'D_loss': D_loss_sum/(batch_idx+1), 'MI': mi_sum/(batch_idx+1)})
 
@@ -462,4 +464,9 @@ for epoch in range(1, epoch_num+1):
     torch.save(generator.params, f'{param_save_dir}/generator_params_epoch{epoch}.pth')
     
     print("epoch: {}, D_loss: {}, G_loss: {}, MI = {}, FD = {}".format(epoch, D_loss, G_loss, mi, frechet_distance))
+
+    # Epoch 끝에서 필요 없는 변수를 삭제
+    del generator_output, fake_input, batch
+    gc.collect()
+    torch.cuda.empty_cache()
 
