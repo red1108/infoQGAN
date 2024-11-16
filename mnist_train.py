@@ -377,7 +377,13 @@ import gc
 from torch.utils.data import DataLoader, TensorDataset
 
 train_tensor = torch.tensor(train_dataset, dtype=torch.float32)
-train_loader = DataLoader(TensorDataset(train_tensor), batch_size=BATCH_SIZE, shuffle=True, pin_memory=True)
+train_loader = DataLoader(
+    TensorDataset(train_tensor),
+    batch_size=BATCH_SIZE,
+    shuffle=True,
+    pin_memory=True,
+    drop_last=True  # 마지막 배치 크기가 작으면 무시
+)
 
 for epoch in range(1, epoch_num+1):
     G_loss_sum = 0.0
