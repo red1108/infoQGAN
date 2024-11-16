@@ -374,6 +374,10 @@ def categorical_distribution(A, T, size): # -A ~ A를 내분하는 categorical d
     return torch.tensor(np.random.choice(categories, size))
 
 import gc
+from torch.utils.data import DataLoader, TensorDataset
+
+train_tensor = torch.tensor(train_dataset, dtype=torch.float32)
+train_loader = DataLoader(TensorDataset(train_tensor), batch_size=BATCH_SIZE, shuffle=True, pin_memory=True)
 
 for epoch in range(1, epoch_num+1):
     G_loss_sum = 0.0
@@ -385,10 +389,8 @@ for epoch in range(1, epoch_num+1):
     # 그림 그릴때 필요하다
     gen_outputs = [] # (데이터수, 2) 생성한 모든 점의 좌표들
     gen_codes = [] # (데이터수, 2) 점 찍는데 들어간 code들
-    train_dataset = train_dataset[np.random.permutation(train_dataset.shape[0])] # 매 epoch마다 데이터를 섞는다.
-    for batch_idx in pbar:
-        batch = torch.FloatTensor(train_dataset[BATCH_SIZE * batch_idx : BATCH_SIZE * batch_idx + BATCH_SIZE])
 
+    for batch_idx, batch in enumerate(train_loader):
         # # train generator
         generator_seed = torch.empty((BATCH_SIZE, n_qubits)).uniform_(-SEED_RANGE, SEED_RANGE)
         # 마지막 code qubit은 -A ~ A를 내분하는 categorical distribution으로 변경
