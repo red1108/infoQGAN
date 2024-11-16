@@ -390,7 +390,7 @@ for epoch in range(1, epoch_num+1):
         # # train generator
         generator_seed = torch.empty((BATCH_SIZE, n_qubits)).uniform_(-SEED_RANGE, SEED_RANGE)
         # 마지막 code qubit은 -A ~ A를 내분하는 categorical distribution으로 변경
-        generator_seed[:,-1] = categorical_distribution(SEED_RANGE, len(TARGETS), generator_seed.shape[0])
+        # generator_seed[:,-1] = categorical_distribution(SEED_RANGE, len(TARGETS), generator_seed.shape[0])
         generator_output, generator_loss = generator_train_step(generator_seed, use_mine=use_mine)
         G_opt.zero_grad()
         generator_loss.requires_grad_(True)
