@@ -54,6 +54,7 @@ gamma = 0.8
 latent_dim = 16
 num_images_per_class = 2000
 coeff = 0.05
+code_qubits = 3
 ARGS = None
 
 def visualize_autoencoder(autoencoder, data):
@@ -110,6 +111,7 @@ if __name__ == "__main__":
     parser.add_argument("--epochs", type=int, required=True, help="Number of epochs")
     parser.add_argument("--gamma", type=float, default=0.8, help="Learning rate scheduler gamma (step = 30 epochs)")
     parser.add_argument("--latent_dim", type=int, required=True, help="Dimension of latent space")
+    parser.add_argument("--code", type=int, default=3, help="Number of code qubits")
     parser.add_argument("--num_images_per_class", type=int, default=2000, help="Number of images per class")
 
     args = parser.parse_args()
@@ -132,6 +134,7 @@ if __name__ == "__main__":
     gamma = args.gamma
     latent_dim = args.latent_dim
     num_images_per_class = args.num_images_per_class
+    code_qubits = args.code
 
     print(f"Use Mine: {use_mine}")
     print(f"DIGITS: {DIGITS}")
@@ -150,6 +153,7 @@ if __name__ == "__main__":
     print(f"Epochs: {epochs}")
     print(f"Gamma: {gamma}")
     print(f"Latent Dimension: {latent_dim}")
+    print(f"Code Qubits: {code_qubits}")
     print(f"Number of Images per Class: {num_images_per_class}")
 
 
@@ -172,14 +176,13 @@ visualize_autoencoder(autoencoder, data)
     # n_qubits, code_qubits, noise_qubits, output_qubits 설정
 print("이번 학습으로 생성할 숫자는", TARGETS, "입니다.")
 # 원래는 DIGIT 하나만이었는데, 이제는 TARGETS 내부 숫자들을 모두 학습해야 한다.
-train_dataset = np.concatenate([data[f'{target}_latent'][:num_images_per_class//2] for target in TARGETS], axis=0)
+train_dataset = np.concatenate([data[f'{target}_latent'][:num_images_per_class//4] for target in TARGETS], axis=0)
 test_dataset = np.concatenate([data[f'{target}_latent'][num_images_per_class//2:num_images_per_class*3//4] for target in TARGETS], axis=0)
 val_dataset = np.concatenate([data[f'{target}_latent'][num_images_per_class*3//4:] for target in TARGETS], axis=0)
 train_size, test_size, val_size = len(train_dataset), len(test_dataset), len(val_dataset)
 print("train_size =", train_size, "test_size =", test_size, "val_size =", val_size)
 
 n_qubits = 5
-code_qubits = 2
 noise_qubits = n_qubits - code_qubits
 output_qubits = 5 # 출력 차원은 2**output_qubits 만큼.
 assert(2**output_qubits >= latent_dim)
@@ -195,7 +198,7 @@ dev = qml.device("default.qubit", wires=n_qubits)
 # 5. 생성자, 판별자, MINE, optimizer 초기화
 generator_initial_params = Variable(torch.tensor(np.random.normal(-np.pi/3, np.pi/3, (n_layers, n_qubits, 1))), requires_grad=True)
 generator = QGAN2.QGAN2(n_qubits, output_qubits, n_layers, generator_initial_params, dev)
-discriminator = Discriminator.LinearDiscriminator(input_dim = latent_dim, hidden_size=25) # 50 --> 25 변경
+discriminator = Discriminator.LinearDiscriminator(input_dim = latent_dim, hidden_size=100) # 50 --> 25 변경
 mine = MINE.LinearMine(code_qubits=code_qubits, output_dim=latent_dim, size=100) # 50 --> 100 변경
 print("n_qubits = {} n_layers = {} 총 파라미터 수 = {}".format(n_qubits, n_layers, generator_initial_params.numel()))
 
