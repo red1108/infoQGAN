@@ -384,13 +384,14 @@ for epoch in range(1, epoch_num+1):
     D_loss_sum = 0.0
     mi_sum = 0.0
     batch_num = train_size // BATCH_SIZE
-    pbar = tqdm(range(batch_num))
+
+    pbar = tqdm(train_loader, desc=f"Epoch {epoch}/{epoch_num}", unit="batch")
 
     # 그림 그릴때 필요하다
     gen_outputs = [] # (데이터수, 2) 생성한 모든 점의 좌표들
     gen_codes = [] # (데이터수, 2) 점 찍는데 들어간 code들
 
-    for batch_idx, (batch,) in enumerate(train_loader):
+    for batch_idx, (batch,) in enumerate(pbar):  # batch unpack
         # # train generator
         generator_seed = torch.empty((BATCH_SIZE, n_qubits)).uniform_(-SEED_RANGE, SEED_RANGE)
         # 마지막 code qubit은 -A ~ A를 내분하는 categorical distribution으로 변경
