@@ -263,13 +263,15 @@ def visualize_output_simple(gen_outputs, gen_codes, epoch, writer, image_file_pa
         reconstructed = autoencoder.decoder(latent_vectors)  # (100, 1, 28, 28)
     
     # 1. 첫 번째 플롯: 10*10 그리드에 reconstructed 이미지 시각화 (랜덤 순서)
-    fig, axs = plt.subplots(10, 10, figsize=(10, 10))
+    fig, axs = plt.subplots(10, 10, figsize=(10, 10), dpi=80)
     for i in range(10):
         for j in range(10):
             axs[i, j].imshow(reconstructed[i*10+j].squeeze().detach().numpy(), cmap='gray')
             axs[i, j].axis('off')
     plt.suptitle(f"TARGETS={TARGETS_STR}/{DIGITS_STR} epoch={epoch} dim={latent_dim}")
-    writer.add_figure(f'2D Distribution', fig, epoch)
+    
+    if epoch%5 == 0:
+        writer.add_figure(f'2D Distribution', fig, epoch)
     fig.savefig(f'{image_file_path}/generated_epoch{epoch:03d}.png')
     plt.close(fig)
 
@@ -281,19 +283,19 @@ def visualize_output_simple(gen_outputs, gen_codes, epoch, writer, image_file_pa
         sorted_indices = front_100_codes[:, q].argsort()
         sorted_reconstructed = reconstructed[sorted_indices]  # 정렬된 상위 100개 사용
 
-        fig, axs = plt.subplots(10, 10, figsize=(10, 10))
+        fig, axs = plt.subplots(10, 10, figsize=(10, 10), dpi=80)
         for i in range(10):
             for j in range(10):
                 axs[i, j].imshow(sorted_reconstructed[i*10+j].squeeze().detach().numpy(), cmap='gray')
                 axs[i, j].axis('off')
         plt.suptitle(f"TARGETS={TARGETS_STR} epoch={epoch} dim={latent_dim} code_qubit={q}")
-        
-        writer.add_figure(f'Sorted by Code Qubit {q}', fig, epoch) # TensorBoard에 기록
+        if epoch%5 == 0:
+            writer.add_figure(f'Sorted by Code Qubit {q}', fig, epoch) # TensorBoard에 기록
         fig.savefig(f'{image_file_path}/sorted_{q}_epoch{epoch:03d}.png') # 이미지 파일로 저장
         plt.close(fig)
     
     # latent vector의 평균값과 비교
-    fig, ax = plt.subplots()
+    fig, ax = plt.subplots(dpi=80)
     for digit in TARGETS:
         ax.plot(data[f'{digit}_latent'].mean(axis=0), label=f"{digit}-latent")
     ax.plot(gen_outputs.mean(axis=0), label="Generated")
@@ -302,7 +304,8 @@ def visualize_output_simple(gen_outputs, gen_codes, epoch, writer, image_file_pa
     ax.set_ylabel("Mean Value")
     ax.legend(title="Category")
 
-    writer.add_figure(f'Latent Compare', fig, epoch)
+    if epoch%5 == 0:
+        writer.add_figure(f'Latent Compare', fig, epoch)
     fig.savefig(f'{image_file_path}/compare_epoch{epoch:03d}.png')
     plt.close(fig)
         
