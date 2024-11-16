@@ -270,8 +270,7 @@ def visualize_output_simple(gen_outputs, gen_codes, epoch, writer, image_file_pa
             axs[i, j].axis('off')
     plt.suptitle(f"TARGETS={TARGETS_STR}/{DIGITS_STR} epoch={epoch} dim={latent_dim}")
     
-    if epoch%5 == 0:
-        writer.add_figure(f'2D Distribution', fig, epoch)
+    writer.add_figure(f'2D Distribution', fig, epoch)
     fig.savefig(f'{image_file_path}/generated_epoch{epoch:03d}.png')
     plt.close(fig)
 
@@ -289,8 +288,7 @@ def visualize_output_simple(gen_outputs, gen_codes, epoch, writer, image_file_pa
                 axs[i, j].imshow(sorted_reconstructed[i*10+j].squeeze().detach().numpy(), cmap='gray')
                 axs[i, j].axis('off')
         plt.suptitle(f"TARGETS={TARGETS_STR} epoch={epoch} dim={latent_dim} code_qubit={q}")
-        if epoch%5 == 0:
-            writer.add_figure(f'Sorted by Code Qubit {q}', fig, epoch) # TensorBoard에 기록
+        writer.add_figure(f'Sorted by Code Qubit {q}', fig, epoch) # TensorBoard에 기록
         fig.savefig(f'{image_file_path}/sorted_{q}_epoch{epoch:03d}.png') # 이미지 파일로 저장
         plt.close(fig)
     
@@ -304,8 +302,7 @@ def visualize_output_simple(gen_outputs, gen_codes, epoch, writer, image_file_pa
     ax.set_ylabel("Mean Value")
     ax.legend(title="Category")
 
-    if epoch%5 == 0:
-        writer.add_figure(f'Latent Compare', fig, epoch)
+    writer.add_figure(f'Latent Compare', fig, epoch)
     fig.savefig(f'{image_file_path}/compare_epoch{epoch:03d}.png')
     plt.close(fig)
         
