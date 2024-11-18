@@ -21,20 +21,21 @@ class QGAN2:
         for i in range(self.n_qubits):
             qml.RY(generator_input[i]*np.pi/2, wires=i) # TODO: *a 해서 값 범위 맞추기
         
-    def single_layer(self, params):
+    def single_layer(self, params, last=False):
         for i in range(self.n_qubits):
             qml.RY(params[i][0], wires=i)
         
-        for i in range(self.n_qubits):
-            qml.CNOT(wires=[i, (i+1)%self.n_qubits])
+        if not last:
+            for i in range(self.n_qubits):
+                qml.CNOT(wires=[i, (i+1)%self.n_qubits])
 
     def circuit(self, generator_input):
         # output dimension: 2**output_qubits
 
         self.init_circuit(generator_input)
 
-        for param in self.params:
-            self.single_layer(param)
+        for i in range(self.n_layers):
+            self.single_layer(self.params[i], last=(i==self.n_layers-1))
 
         return qml.probs(wires=range(self.output_qubits)) # |00>, |01>, |10>, |11> 이런식으로 모든 basis들의 확률값을 반환
 
