@@ -48,6 +48,7 @@ G_lr = 0.005
 M_lr = 0.0001
 D_lr = 0.001
 SEED_RANGE = 0.2
+SEED_DIM = 3
 smooth = 0.0
 epochs = 100
 gamma = 0.8
@@ -106,6 +107,7 @@ if __name__ == "__main__":
     parser.add_argument("--M_lr", type=float, default=0.0001, help="Learning rate for mine")
     parser.add_argument("--D_lr", type=float, default=0.001, help="Learning rate for discriminator")
     parser.add_argument("--seed", type=float, default=0.2, help="Seed range for generator")
+    parser.add_argument("--seed_dim", type=int, default=2, help="Seed dimension is (qubit, dim)")
     parser.add_argument("--coeff", type=float, default=0.05, help="Coefficient value used for InfoQGAN (not used for QGAN)")
     parser.add_argument("--smooth", type=float, default=0.0, help="Discriminator label smoothing (efficient for QGAN)")
     parser.add_argument("--epochs", type=int, required=True, help="Number of epochs")
@@ -129,6 +131,7 @@ if __name__ == "__main__":
     D_lr = args.D_lr
     coeff = args.coeff
     SEED_RANGE = args.seed
+    SEED_DIM = args.seed_dim
     smooth = args.smooth
     epochs = args.epochs
     gamma = args.gamma
@@ -149,6 +152,7 @@ if __name__ == "__main__":
     if use_mine:
         print(f"InfoQGAN coefficient: {coeff}")
     print(f"Seed Range: {SEED_RANGE}")
+    print(f"Seed Dimension: {SEED_DIM}")
     print(f"Smooth: {smooth}")
     print(f"Epochs: {epochs}")
     print(f"Gamma: {gamma}")
@@ -197,7 +201,7 @@ dev = qml.device("default.qubit", wires=n_qubits)
 
 # 5. 생성자, 판별자, MINE, optimizer 초기화
 generator_initial_params = Variable(torch.tensor(np.random.normal(-np.pi/3, np.pi/3, (n_layers, n_qubits, 1))), requires_grad=True)
-generator = QGAN.QGAN2(n_qubits, output_qubits, n_layers, generator_initial_params, dev)
+generator = QGAN.QGAN3(n_qubits, output_qubits, n_layers, generator_initial_params, dev)
 discriminator = Discriminator.LinearDiscriminator(input_dim = latent_dim, hidden_size=100) # 50 --> 25 변경
 mine = MINE.LinearMine(code_qubits=code_qubits, output_dim=latent_dim, size=100) # 50 --> 100 변경
 print("n_qubits = {} n_layers = {} 총 파라미터 수 = {}".format(n_qubits, n_layers, generator_initial_params.numel()))
@@ -211,19 +215,20 @@ D_scheduler = torch.optim.lr_scheduler.StepLR(D_opt, step_size=30, gamma=gamma)
 M_scheduler = torch.optim.lr_scheduler.StepLR(M_opt, step_size=30, gamma=gamma)
 
 # 학습에 사용할 train_step과 disc_cost_fn 정의 
-def generator_train_step(generator_input, use_mine = False):
+def generator_train_step(generator_seed, use_mine = False):
     '''
     params (torch.Tensor(레이어,큐빗,3)): a parameter
     generator_input (torch.Tensor(BATCH_SIZE, n_qubits)): 생성기 입력 seed (noise + code). -1~1 사이의 값
     '''
-    code_input = generator_input[:, -code_qubits:] # 입력중에서 code만 뽑는다. (BATCH_SIZE, code_qubits)
+    code_input = generator_seed[:, -code_qubits:] # 입력중에서 code만 뽑는다. (BATCH_SIZE, code_qubits)
 
-    generator_output = generator.forward(generator_input) # 출력을 뽑아낸다 (BATCH_SIZE, 2**output_qubits)
+    # reverse generator_seed order
+    generator_in = generator_seed.flip(1).view(BATCH_SIZE, n_qubits, SEED_DIM) # (BATCH_SIZE, n_qubits, SEED_DIM)
+    generator_output = generator.forward(generator_in) # 출력을 뽑아낸다 (BATCH_SIZE, 2**output_qubits)
 
     generator_output = generator_output.to(torch.float32) # (BATCH_SIZE,  2**output_qubits)
     # clipping first latent_dim
     generator_output = generator_output[:, :latent_dim] # (BATCH_SIZE, latent_dim)
-    
     disc_output = discriminator(generator_output) # 밑에 코드에서 정의됨
     gan_loss = torch.log(1-disc_output).mean()
     
@@ -399,9 +404,8 @@ for epoch in range(1, epoch_num+1):
 
     for batch_idx, (batch,) in enumerate(pbar):  # batch unpack
         # # train generator
-        generator_seed = torch.empty((BATCH_SIZE, n_qubits)).uniform_(-SEED_RANGE, SEED_RANGE)
-        # 마지막 code qubit은 -A ~ A를 내분하는 categorical distribution으로 변경
-        # generator_seed[:,-1] = categorical_distribution(SEED_RANGE, len(TARGETS), generator_seed.shape[0])
+        generator_seed = torch.empty((BATCH_SIZE, n_qubits * SEED_DIM)).uniform_(-SEED_RANGE, SEED_RANGE)
+        # reshape to (BATCH_SIZE, n_qubits, SEED_DIM)
         generator_output, generator_loss = generator_train_step(generator_seed, use_mine=use_mine)
         G_opt.zero_grad()
         generator_loss.requires_grad_(True)
@@ -478,3 +482,4 @@ for epoch in range(1, epoch_num+1):
     del generator_output, fake_input, batch
     gc.collect()
     torch.cuda.empty_cache()
+
