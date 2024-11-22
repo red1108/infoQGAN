@@ -122,7 +122,46 @@ class QGAN3:
             self.init_circuit(generator_seed[:,i])
 
         for i in range(self.n_layers):
-            self.single_layer(self.params[i], cnot=(i==self.n_layers-1))
+            self.single_layer(self.params[i], cnot=(i<self.n_layers-1))
+
+        return qml.probs(wires=range(self.output_qubits)) # |00>, |01>, |10>, |11> 이런식으로 모든 basis들의 확률값을 반환
+
+    def forward(self, generator_seed):
+        generator_output = [self.generator_circuit_qnode(single_in) for single_in in generator_seed]  # (BATCH_SIZE, 2**output_qubits)
+        generator_output = torch.stack(generator_output)  # (BATCH_SIZE, 2**output_qubits)
+        return generator_output
+    
+class QGAN4:
+    def __init__(self, n_qubits, output_qubits, n_layers, params, dev):
+        self.n_qubits = n_qubits
+        self.n_layers = n_layers
+        self.params = params
+
+        self.output_qubits = output_qubits
+
+        if output_qubits > n_qubits:
+            raise ValueError("output_qubits should be smaller than n_qubits")
+        
+        self.dev = dev  # pennylane device
+        self.generator_circuit_qnode = qml.QNode(self.circuit, self.dev, interface="torch")
+        
+    def init_circuit(self, generator_seed):
+        qml.AmplitudeEmbedding(features=generator_seed, wires=self.n_qubits, normalize=True)
+        
+    def single_layer(self, params, cnot=False):
+        for i in range(self.n_qubits):
+            qml.RY(params[i][0], wires=i)
+        
+        if cnot:
+            for i in range(self.n_qubits):
+                qml.CNOT(wires=[i, (i+1)%self.n_qubits])
+
+    def circuit(self, generator_seed):
+        # generator_seed: (2**n_qubits)
+        # output dimension: 2**output_qubits
+        self.init_circuit(generator_seed)
+        for i in range(self.n_layers):
+            self.single_layer(self.params[i], cnot=(i<self.n_layers-1))
 
         return qml.probs(wires=range(self.output_qubits)) # |00>, |01>, |10>, |11> 이런식으로 모든 basis들의 확률값을 반환
 
