@@ -118,10 +118,10 @@ class QGAN3:
         # output dimension: 2**output_qubits
 
         seed_depth = generator_seed.shape[1]
+        for i in range(seed_depth):
+            self.init_circuit(generator_seed[:,i])
 
         for i in range(self.n_layers):
-            if i < seed_depth:
-                self.init_circuit(generator_seed[:,i])
             self.single_layer(self.params[i], cnot=(i==self.n_layers-1))
 
         return qml.probs(wires=range(self.output_qubits)) # |00>, |01>, |10>, |11> 이런식으로 모든 basis들의 확률값을 반환

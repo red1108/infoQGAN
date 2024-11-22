@@ -220,10 +220,10 @@ def generator_train_step(generator_seed, use_mine = False):
     params (torch.Tensor(레이어,큐빗,3)): a parameter
     generator_input (torch.Tensor(BATCH_SIZE, n_qubits)): 생성기 입력 seed (noise + code). -1~1 사이의 값
     '''
-    code_input = generator_seed[:, -code_qubits:] # 입력중에서 code만 뽑는다. (BATCH_SIZE, code_qubits)
+    code_input = generator_seed[:, :code_qubits] # 입력중에서 code만 뽑는다. (BATCH_SIZE, code_qubits)
 
     # reverse generator_seed order
-    generator_in = generator_seed.flip(1).view(BATCH_SIZE, n_qubits, SEED_DIM) # (BATCH_SIZE, n_qubits, SEED_DIM)
+    generator_in = generator_seed.view(BATCH_SIZE, n_qubits, SEED_DIM) # (BATCH_SIZE, n_qubits, SEED_DIM)
     generator_output = generator.forward(generator_in) # 출력을 뽑아낸다 (BATCH_SIZE, 2**output_qubits)
 
     generator_output = generator_output.to(torch.float32) # (BATCH_SIZE,  2**output_qubits)
@@ -421,7 +421,7 @@ for epoch in range(1, epoch_num+1):
         D_opt.step()
 
         # train mine
-        code_input = generator_seed[:, -code_qubits:] # (BATCH_SIZE, code_qubits) 코드만 추출
+        code_input = generator_seed[:, :code_qubits] # (BATCH_SIZE, code_qubits) 코드만 추출
         pred_xy = mine(code_input, fake_input)
         code_input_shuffle = code_input[torch.randperm(BATCH_SIZE)]
         pred_x_y = mine(code_input_shuffle, fake_input)
