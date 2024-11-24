@@ -51,11 +51,11 @@ M_lr = 0.0001
 D_lr = 0.001
 smooth = 0.0
 SEED_R = 1.5
-epochs = 100
+epoch_num = 300
 gamma = 0.8
 latent_dim = 16
 num_images_per_class = 2000
-coeff = 0.05
+COEFF = 0.05
 code_qubits = 3
 ARGS = None
 
@@ -129,11 +129,11 @@ if __name__ == "__main__":
     G_lr = args.G_lr
     M_lr = args.M_lr
     D_lr = args.D_lr
-    coeff = args.coeff
+    COEFF = args.coeff
     smooth = args.smooth
     SEED_R = args.seed
     assert SEED_R > 1, "Error: SEED_R must be greater than 1."
-    epochs = args.epochs
+    epoch_num = args.epochs
     gamma = args.gamma
     latent_dim = args.latent_dim
     num_images_per_class = args.num_images_per_class
@@ -150,10 +150,10 @@ if __name__ == "__main__":
     print(f"Mine Learning Rate: {M_lr}")
     print(f"Discriminator Learning Rate: {D_lr}")
     if use_mine:
-        print(f"InfoQGAN coefficient: {coeff}")
+        print(f"InfoQGAN coefficient: {COEFF}")
     print(f"Smooth: {smooth}")
     print(f"Seed Range: 1 ~ {SEED_R}")
-    print(f"Epochs: {epochs}")
+    print(f"Epochs: {epoch_num}")
     print(f"Gamma: {gamma}")
     print(f"Latent Dimension: {latent_dim}")
     print(f"Code Qubits: {code_qubits}")
@@ -214,7 +214,7 @@ D_scheduler = torch.optim.lr_scheduler.StepLR(D_opt, step_size=30, gamma=gamma)
 M_scheduler = torch.optim.lr_scheduler.StepLR(M_opt, step_size=30, gamma=gamma)
 
 # 학습에 사용할 train_step과 disc_cost_fn 정의 
-def generator_train_step(generator_seed, use_mine = False):
+def generator_train_step(generator_seed, coeff, use_mine = False):
     '''
     params (torch.Tensor(레이어,큐빗,3)): a parameter
     generator_input (torch.Tensor(BATCH_SIZE, n_qubits)): 생성기 입력 seed (noise + code). -1~1 사이의 값
@@ -352,7 +352,7 @@ def convert_py_to_html(py_file_path, html_file_path):
         f.write(html_code)
 
     print(f"Converted {py_file_path} to {html_file_path} with syntax highlighting.")
-convert_py_to_html('mnist_train.py', os.path.join(save_dir, 'mnist_train.html'))
+convert_py_to_html('mnist_train2.py', os.path.join(save_dir, 'mnist_train2.html'))
 # ==========================================================
 
 # save ARGS in save_dir/args.txt
@@ -366,14 +366,13 @@ df = pd.DataFrame(columns=['epoch', 'D_loss', 'G_loss', 'MI', 'FD', 'time'])
 # TensorBoard SummaryWriter 초기화
 writer = SummaryWriter(log_dir=save_dir)
 
-epoch_num = 300
 start_time = time.time()
 
-def categorical_distribution(A, T, size): # -A ~ A를 내분하는 categorical distribution.
+def categorical_distribution(S, E, T, size): # S~E를 T개로 내분하는 categorical distribution.
     if T == 1:
-        categories = [0]
+        categories = [(S+E)/2]
     else:
-        categories = np.linspace(-A, A, T)
+        categories = np.linspace(S, E, T)
     return torch.tensor(np.random.choice(categories, size))
 
 from torch.utils.data import DataLoader, TensorDataset
@@ -396,12 +395,14 @@ for epoch in range(1, epoch_num+1):
     pbar = tqdm(train_loader, desc=f"Epoch {epoch}/{epoch_num}", unit="batch")
 
     # 그림 그릴때 필요하다
-    gen_outputs = [] # (데이터수, 2) 생성한 모든 점의 좌표들
-    gen_codes = [] # (데이터수, 2) 점 찍는데 들어간 code들
+    gen_outputs = [] # (데이터수, 2**output_qubits) 출력들
+    gen_codes = [] # (데이터수, code_qubits) 코드들
+    coeff = coeff * (0.1 + 0.9 * (epoch/epoch_num)) # 0.1 ~ 1비율로 선형적으로 증가
 
     for batch_idx, (batch,) in enumerate(pbar):  # batch unpack
         # # train generator
         generator_seed = torch.empty((BATCH_SIZE, 2**n_qubits)).uniform_(1, SEED_R)
+        generator_seed[:, 0] = categorical_distribution(1, SEED_R, len(TARGETS), BATCH_SIZE)
         generator_output, generator_loss = generator_train_step(generator_seed, use_mine=use_mine)
         G_opt.zero_grad()
         generator_loss.requires_grad_(True)
