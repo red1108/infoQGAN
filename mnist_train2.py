@@ -11,7 +11,9 @@ from datetime import datetime
 # Data Manipulation and Visualization
 import numpy as np
 import pandas as pd
+import matplotlib
 import matplotlib.pyplot as plt
+matplotlib.use('Agg')  # For saving figures
 from IPython.display import clear_output
 from tqdm import tqdm
 
@@ -182,7 +184,7 @@ n_qubits = 5
 noise_qubits = n_qubits - code_qubits
 output_qubits = 5 # 출력 차원은 2**output_qubits 만큼.
 assert(2**output_qubits >= latent_dim)
-assert(code_qubits <= n_qubits)
+assert(code_qubits <= 2**n_qubits)
 n_layers = 20
 BATCH_SIZE = 16
 
@@ -369,7 +371,6 @@ def categorical_distribution(A, T, size): # -A ~ A를 내분하는 categorical d
         categories = np.linspace(-A, A, T)
     return torch.tensor(np.random.choice(categories, size))
 
-import gc
 from torch.utils.data import DataLoader, TensorDataset
 
 train_tensor = torch.tensor(train_dataset, dtype=torch.float32)
@@ -395,7 +396,7 @@ for epoch in range(1, epoch_num+1):
 
     for batch_idx, (batch,) in enumerate(pbar):  # batch unpack
         # # train generator
-        generator_seed = torch.empty((BATCH_SIZE, 2**n_qubits)).uniform_(0, 1)
+        generator_seed = torch.empty((BATCH_SIZE, 2**n_qubits)).uniform_(2, 3)
         generator_output, generator_loss = generator_train_step(generator_seed, use_mine=use_mine)
         G_opt.zero_grad()
         generator_loss.requires_grad_(True)
@@ -467,9 +468,4 @@ for epoch in range(1, epoch_num+1):
     torch.save(generator.params, f'{param_save_dir}/generator_params_epoch{epoch}.pth')
     
     print("epoch: {}, D_loss: {}, G_loss: {}, MI = {}, FD = {}".format(epoch, D_loss, G_loss, mi, frechet_distance))
-
-    # Epoch 끝에서 필요 없는 변수를 삭제
-    del generator_output, fake_input, batch
-    gc.collect()
-    torch.cuda.empty_cache()
 
