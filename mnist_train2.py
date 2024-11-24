@@ -50,6 +50,7 @@ G_lr = 0.005
 M_lr = 0.0001
 D_lr = 0.001
 smooth = 0.0
+SEED_R = 1.5
 epochs = 100
 gamma = 0.8
 latent_dim = 16
@@ -107,6 +108,7 @@ if __name__ == "__main__":
     parser.add_argument("--M_lr", type=float, default=0.0001, help="Learning rate for mine")
     parser.add_argument("--D_lr", type=float, default=0.001, help="Learning rate for discriminator")
     parser.add_argument("--coeff", type=float, default=0.05, help="Coefficient value used for InfoQGAN (not used for QGAN)")
+    parser.add_argument("--seed", type=float, default=1.5, help="Seed value range (1, seeed)")
     parser.add_argument("--smooth", type=float, default=0.0, help="Discriminator label smoothing (efficient for QGAN)")
     parser.add_argument("--epochs", type=int, required=True, help="Number of epochs")
     parser.add_argument("--gamma", type=float, default=0.8, help="Learning rate scheduler gamma (step = 30 epochs)")
@@ -129,6 +131,8 @@ if __name__ == "__main__":
     D_lr = args.D_lr
     coeff = args.coeff
     smooth = args.smooth
+    SEED_R = args.seed
+    assert SEED_R > 1, "Error: SEED_R must be greater than 1."
     epochs = args.epochs
     gamma = args.gamma
     latent_dim = args.latent_dim
@@ -148,6 +152,7 @@ if __name__ == "__main__":
     if use_mine:
         print(f"InfoQGAN coefficient: {coeff}")
     print(f"Smooth: {smooth}")
+    print(f"Seed Range: 1 ~ {SEED_R}")
     print(f"Epochs: {epochs}")
     print(f"Gamma: {gamma}")
     print(f"Latent Dimension: {latent_dim}")
@@ -396,7 +401,7 @@ for epoch in range(1, epoch_num+1):
 
     for batch_idx, (batch,) in enumerate(pbar):  # batch unpack
         # # train generator
-        generator_seed = torch.empty((BATCH_SIZE, 2**n_qubits)).uniform_(2, 3)
+        generator_seed = torch.empty((BATCH_SIZE, 2**n_qubits)).uniform_(1, SEED_R)
         generator_output, generator_loss = generator_train_step(generator_seed, use_mine=use_mine)
         G_opt.zero_grad()
         generator_loss.requires_grad_(True)
