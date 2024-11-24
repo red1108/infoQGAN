@@ -397,13 +397,13 @@ for epoch in range(1, epoch_num+1):
     # 그림 그릴때 필요하다
     gen_outputs = [] # (데이터수, 2**output_qubits) 출력들
     gen_codes = [] # (데이터수, code_qubits) 코드들
-    coeff = coeff * (0.1 + 0.9 * (epoch/epoch_num)) # 0.1 ~ 1비율로 선형적으로 증가
+    coeff = COEFF * (0.1 + 0.9 * (epoch/epoch_num)) # 0.1 ~ 1비율로 선형적으로 증가
 
     for batch_idx, (batch,) in enumerate(pbar):  # batch unpack
         # # train generator
         generator_seed = torch.empty((BATCH_SIZE, 2**n_qubits)).uniform_(1, SEED_R)
         generator_seed[:, 0] = categorical_distribution(1, SEED_R, len(TARGETS), BATCH_SIZE)
-        generator_output, generator_loss = generator_train_step(generator_seed, use_mine=use_mine)
+        generator_output, generator_loss = generator_train_step(generator_seed, coeff, use_mine=use_mine)
         G_opt.zero_grad()
         generator_loss.requires_grad_(True)
         generator_loss.backward()
