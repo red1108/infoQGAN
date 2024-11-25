@@ -146,7 +146,7 @@ class QGAN4:
         self.generator_circuit_qnode = qml.QNode(self.circuit, self.dev, interface="torch")
         
     def init_circuit(self, generator_seed):
-        qml.AmplitudeEmbedding(features=generator_seed, wires=range(self.n_qubits), normalize=True)
+        qml.AmplitudeEmbedding(features=generator_seed, wires=range(self.n_qubits), normalize=True, pad_with=0.0)
         
     def single_layer(self, params, cnot=False):
         for i in range(self.n_qubits):
