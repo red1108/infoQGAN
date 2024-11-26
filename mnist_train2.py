@@ -166,13 +166,14 @@ if __name__ == "__main__":
 
 # 1. autoencoder 모델 준비
 autoencoder = Autoencoder.Autoencoder(latent_dim=latent_dim)
-autoencoder_epochs = 50
+autoencoder_epochs = 100
 autoencoder_lr = 0.0001
-autoencoder.load_state_dict(torch.load(f'savepoints/autoencoder_{DIGITS_STR}_{latent_dim}_ep{autoencoder_epochs}_lr{autoencoder_lr}.pth', weights_only=True))
+autoencoder_coeff = 0.0005
+autoencoder.load_state_dict(torch.load(f'savepoints/InfomaxEncoder_{DIGITS_STR}_{latent_dim}_ep{autoencoder_epochs}_lr{autoencoder_lr}_{autoencoder_coeff}.pth', weights_only=True))
 autoencoder.eval()  # 평가 모드로 전환
 
 # 2. 데이터 로드
-data = np.load(f'./data/MNIST/{DIGITS_STR}_{latent_dim}_{autoencoder_epochs}_{autoencoder_lr}/mnist_{DIGITS_STR}_{latent_dim}_{num_images_per_class}.npz')
+data = np.load(f'./data/MNIST/{DIGITS_STR}_{latent_dim}_{autoencoder_epochs}_{autoencoder_lr}_{autoencoder_coeff}/mnist_{DIGITS_STR}_{latent_dim}_{num_images_per_class}.npz')
 
 # 3. autoencoder 모델 시각화
 visualize_autoencoder(autoencoder, data)
