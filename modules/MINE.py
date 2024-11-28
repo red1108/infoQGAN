@@ -2,9 +2,9 @@ import torch.nn as nn
 from torch.nn import functional as F
 
 class LinearMine(nn.Module):
-    def __init__(self, code_qubits, output_dim, size=50):
+    def __init__(self, code_dim, output_dim, size=50):
         super(LinearMine, self).__init__()
-        self.fc1 = nn.Linear(code_qubits, size)
+        self.fc1 = nn.Linear(code_dim, size)
         self.fc2 = nn.Linear(output_dim, size)
         self.fc3 = nn.Linear(size, 1)
 
