@@ -1,5 +1,3 @@
-# Train2 와의 변경점
-# 1. seed를 모두 동일한 분포가 아닌, 범위를 선형적으로 제한하는 구조로 바꿈. [1,SEED_R] ~ 에서 시작해서 범위 1/5 까지.
 # Standard Libraries
 import math
 import os
@@ -23,86 +21,44 @@ import torch.nn as nn
 from torch.autograd import Variable
 from torch.utils.tensorboard import SummaryWriter
 
-
-# Custom Modules (Autoencoder, QGAN2, Discriminator, MINE)
-from modules import Autoencoder, QGAN, Discriminator, MINE
+from modules import Autoencoder, GAN, Discriminator, MINE
 from modules.utils import convert_ipynb_to_html  # For saving HTML files
 import importlib  # For reloading modules
 importlib.reload(Autoencoder)
-importlib.reload(QGAN)
+importlib.reload(GAN)
 importlib.reload(Discriminator)
 importlib.reload(MINE)
-
-# quantum computing
-import pennylane as qml
 
 import argparse
 import json
 
+
 # 전역 변수 선언
-train_type = "InfoQGAN"
-use_mine = True if train_type == "InfoQGAN" else False
-DIGITS_STR = ""
-DIGITS = []
-TARGETS_STR = ""
-TARGETS = []
+train_type = "InfoGAN"
+use_mine = True if train_type == "InfoGAN" else False
+DIGITS_STR = "0123456789"
+DIGITS = [0,1,2,3,4,5,6,7,8,9]
+TARGETS_STR = "35"
+TARGETS = [3,5]
 G_lr = 0.005
-M_lr = 0.0001
-D_lr = 0.001
-smooth = 0.0
-SEED_R = 1.5
+M_lr = 0.00005
+D_lr = 0.002
+smooth = 0.15
+SEED_R = 1.7
 SEED_DIM = 10
-epoch_num = 300
-gamma = 0.8
+code_dim = 3
+epoch_num = 500
+gamma = 0.5
 latent_dim = 16
 num_images_per_class = 2000
-COEFF = 0.05
-code_qubits = 3
+COEFF = 2
+BATCH_SIZE = 16
 ARGS = None
 
-def visualize_autoencoder(autoencoder, data):
 
-    # 클래스별로 10개의 latent 벡터를 선택하고 복원
-    reconstructed_images = []
-    for digit in tqdm(DIGITS):
-        latent_data = data[f'{digit}_latent']  # 각 클래스의 latent 벡터 불러오기
-        # 10개의 latent 벡터를 텐서로 변환
-        latent_vectors = torch.tensor(latent_data[:10], dtype=torch.float32)
-        
-        # 오토인코더의 디코더로 복원
-        with torch.no_grad():
-            reconstructed = autoencoder.decoder(latent_vectors)  # (10, 1, 28, 28)
-        reconstructed_images.append(reconstructed)
-
-    # DIGITSx10 그리드에 시각화
-
-    fig, axs = plt.subplots(len(DIGITS), 10, figsize=(10, len(DIGITS)))
-    if len(DIGITS) == 1:
-        axs = axs[np.newaxis, :]
-    for i in range(len(DIGITS)):
-        for j in range(10):
-            # (1, 28, 28) 형태를 (28, 28)으로 변환하여 시각화
-            axs[i, j].imshow(reconstructed_images[i][j].squeeze().detach().numpy(), cmap='gray')
-            axs[i, j].axis('off')
-
-    plt.suptitle(f"Reconstructed Images, dim={latent_dim}, data={num_images_per_class} per class")
-    plt.show()
-
-    # 시각화
-    plt.figure(figsize=(12, 6))
-    for i in DIGITS:
-        plt.plot(data[f'{i}_latent'].mean(axis=0), label=f"{i}-latent")
-
-    plt.title("Mean of Latent Vectors for Categories 0-9")
-    plt.xlabel("Dimension")
-    plt.ylabel("Mean Value")
-    plt.legend(title="Category")
-    plt.show()
-
-# python mnist_train.py --model_type QGAN --DIGITS_STR 0123456789 --DIGIT 1 --G_lr 0.01 --M_lr 0.0001 --D_lr 0.001 --coeff 0.05 --epochs 300 --latent_dim 16 --num_images_per_class 2000
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Training parameters")
-    parser.add_argument("--model_type", choices=['InfoQGAN', 'QGAN'], required=True, help="Model type to use: InfoQGAN or QGAN")
+    parser.add_argument("--model_type", choices=['InfoGAN', 'GAN'], required=True, help="Model type to use: InfoGAN or GAN")
     parser.add_argument("--DIGITS", type=str, required=True, help="Autoencoder trained digits")
     parser.add_argument("--TARGETS", type=str, required=True, help="Target digits")
     parser.add_argument("--G_lr", type=float, default=0.005, help="Learning rate for generator")
@@ -122,7 +78,7 @@ if __name__ == "__main__":
     ARGS = args
 
     train_type = args.model_type
-    use_mine = (train_type == 'InfoQGAN')
+    use_mine = (train_type == 'InfoGAN')
     DIGITS = list(map(int, args.DIGITS))
     DIGITS_STR = args.DIGITS
     TARGETS = list(map(int, args.TARGETS))
@@ -140,7 +96,7 @@ if __name__ == "__main__":
     gamma = args.gamma
     latent_dim = args.latent_dim
     num_images_per_class = args.num_images_per_class
-    code_qubits = args.code
+    code_dim = args.code
 
     print(f"Use Mine: {use_mine}")
     print(f"DIGITS: {DIGITS}")
@@ -160,9 +116,8 @@ if __name__ == "__main__":
     print(f"Epochs: {epoch_num}")
     print(f"Gamma: {gamma}")
     print(f"Latent Dimension: {latent_dim}")
-    print(f"Code Qubits: {code_qubits}")
+    print(f"Code Dim: {code_dim}")
     print(f"Number of Images per Class: {num_images_per_class}")
-
 
 # 1. autoencoder 모델 준비
 autoencoder = Autoencoder.Autoencoder(latent_dim=latent_dim)
@@ -175,13 +130,9 @@ autoencoder.eval()  # 평가 모드로 전환
 # 2. 데이터 로드
 data = np.load(f'./data/MNIST/{DIGITS_STR}_{latent_dim}_{autoencoder_epochs}_{autoencoder_lr}_{autoencoder_coeff}/mnist_{DIGITS_STR}_{latent_dim}_{num_images_per_class}.npz')
 
-# 3. autoencoder 모델 시각화
-visualize_autoencoder(autoencoder, data)
-
 # 4. 학습 준비:
     # 학습 데이터, 테스트 데이터, 검증 데이터를 2:1:1로 나눈다.
-    # cpu/gpu 설정 및 quantum device설정
-    # n_qubits, code_qubits, noise_qubits, output_qubits 설정
+    # cpu/gpu 설정 및 device설정
 print("이번 학습으로 생성할 숫자는", TARGETS, "입니다.")
 # 원래는 DIGIT 하나만이었는데, 이제는 TARGETS 내부 숫자들을 모두 학습해야 한다.
 train_dataset = np.concatenate([data[f'{target}_latent'][:num_images_per_class//4] for target in TARGETS], axis=0)
@@ -190,27 +141,23 @@ val_dataset = np.concatenate([data[f'{target}_latent'][num_images_per_class*3//4
 train_size, test_size, val_size = len(train_dataset), len(test_dataset), len(val_dataset)
 print("train_size =", train_size, "test_size =", test_size, "val_size =", val_size)
 
-n_qubits = 5
-noise_qubits = n_qubits - code_qubits
-output_qubits = 5 # 출력 차원은 2**output_qubits 만큼.
-assert(2**output_qubits >= latent_dim)
-assert(code_qubits <= 2**n_qubits)
-n_layers = 20
-BATCH_SIZE = 16
-
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 print("학습에 사용할 device =",device)
-dev = qml.device("default.qubit", wires=n_qubits)
-
 
 # 5. 생성자, 판별자, MINE, optimizer 초기화
-generator_initial_params = Variable(torch.tensor(np.random.normal(-np.pi/3, np.pi/3, (n_layers, n_qubits, 1))), requires_grad=True)
-generator = QGAN.QGAN4(n_qubits, output_qubits, n_layers, generator_initial_params, dev)
-discriminator = Discriminator.LinearDiscriminator(input_dim = latent_dim, hidden_size=100) # 50 --> 25 변경
-mine = MINE.LinearMine(code_dim=code_dim, output_dim=latent_dim, size=100) # 50 --> 100 변경
-print("n_qubits = {} n_layers = {} 총 파라미터 수 = {}".format(n_qubits, n_layers, generator_initial_params.numel()))
+generator = GAN.LinearGenerator(input_dim=SEED_DIM, output_dim=latent_dim, hidden_size=4)
+discriminator = Discriminator.LinearDiscriminator(input_dim = latent_dim, hidden_size=100)
+mine = MINE.LinearMine(code_dim=code_dim, output_dim=latent_dim, size=100)
 
-G_opt = torch.optim.Adam([generator.params], lr=G_lr)
+# Function to calculate total trainable parameters
+def count_parameters(model):
+    return sum(p.numel() for p in model.parameters() if p.requires_grad)
+
+# Print total number of trainable parameters
+total_params = count_parameters(generator)
+print(f"Total trainable parameters in LinearGenerator: {total_params}")
+
+G_opt = torch.optim.Adam(generator.parameters(), lr=G_lr)
 D_opt = torch.optim.Adam(discriminator.parameters(), lr=D_lr)
 M_opt = torch.optim.Adam(mine.parameters(), lr=M_lr)
 
@@ -218,19 +165,18 @@ G_scheduler = torch.optim.lr_scheduler.StepLR(G_opt, step_size=30, gamma=gamma)
 D_scheduler = torch.optim.lr_scheduler.StepLR(D_opt, step_size=30, gamma=gamma)
 M_scheduler = torch.optim.lr_scheduler.StepLR(M_opt, step_size=30, gamma=gamma)
 
+
+
 # 학습에 사용할 train_step과 disc_cost_fn 정의 
 def generator_train_step(generator_seed, coeff, use_mine = False):
     '''
     params (torch.Tensor(레이어,큐빗,3)): a parameter
-    generator_input (torch.Tensor(BATCH_SIZE, seed_dim)): 생성기 입력 seed (code+noise).
+    generator_input (torch.Tensor(BATCH_SIZE, seed_dim)): 생성기 입력 seed (code+noise)
     '''
-    code_input = generator_seed[:, :code_qubits] # 입력중에서 code만 뽑는다. (BATCH_SIZE, code_qubits)
-    generator_output = generator.forward(generator_seed) # 출력을 뽑아낸다 (BATCH_SIZE, 2**output_qubits)
+    code_input = generator_seed[:, :code_dim] # 입력중에서 code만 뽑는다. (BATCH_SIZE, code_dim)
+    generator_output = generator(generator_seed).to(torch.float32) # 출력을 뽑아낸다 (BATCH_SIZE, latent_dim)
 
-    generator_output = generator_output.to(torch.float32) # (BATCH_SIZE,  2**output_qubits)
-    # clipping first latent_dim
-    generator_output = generator_output[:, :latent_dim] # (BATCH_SIZE, latent_dim)
-    disc_output = discriminator(generator_output) # 밑에 코드에서 정의됨
+    disc_output = discriminator(generator_output) # 판별자 판별 결과. (BATCH_SIZE, 1)
     gan_loss = torch.log(1-disc_output).mean()
     
     if use_mine:
@@ -280,11 +226,10 @@ def visualize_output_simple(gen_outputs, gen_codes, epoch, writer, image_file_pa
     fig.savefig(f'{image_file_path}/generated_epoch{epoch:03d}.png')
     plt.close(fig)
 
-    # 2. code_qubits 값별로 정렬하여 10*10 이미지 배치 생성 및 저장
-    code_qubits = gen_codes.shape[1]
+    # 2. code 값별로 정렬하여 10*10 이미지 배치 생성 및 저장
     front_100_codes = gen_codes[:100]  # gen_codes에서 앞 100개의 코드만 사용
-    for q in range(code_qubits):
-        # 각 code_qubit 값으로 정렬
+    for q in range(code_dim):
+        # 각 code 값으로 정렬
         sorted_indices = front_100_codes[:, q].argsort()
         sorted_reconstructed = reconstructed[sorted_indices]  # 정렬된 상위 100개 사용
 
@@ -293,8 +238,8 @@ def visualize_output_simple(gen_outputs, gen_codes, epoch, writer, image_file_pa
             for j in range(10):
                 axs[i, j].imshow(sorted_reconstructed[i*10+j].squeeze().detach().numpy(), cmap='gray')
                 axs[i, j].axis('off')
-        plt.suptitle(f"TARGETS={TARGETS_STR} epoch={epoch} dim={latent_dim} code_qubit={q}")
-        writer.add_figure(f'Sorted by Code Qubit {q}', fig, epoch) # TensorBoard에 기록
+        plt.suptitle(f"TARGETS={TARGETS_STR} epoch={epoch} dim={latent_dim} code={q}")
+        writer.add_figure(f'Sorted by Code {q}', fig, epoch) # TensorBoard에 기록
         fig.savefig(f'{image_file_path}/sorted_{q}_epoch{epoch:03d}.png') # 이미지 파일로 저장
         plt.close(fig)
     
@@ -311,12 +256,14 @@ def visualize_output_simple(gen_outputs, gen_codes, epoch, writer, image_file_pa
     writer.add_figure(f'Latent Compare', fig, epoch)
     fig.savefig(f'{image_file_path}/compare_epoch{epoch:03d}.png')
     plt.close(fig)
-        
+
+
+
 # 실제 학습 진행
 from scipy.linalg import sqrtm
 
 def calculate_frechet_distance(gen_outputs, val_dataset):
-    # gen_outputs: (_, 2**output_qubits), val_dataset: (_, 2**output_qubits)
+    # gen_outputs: (_, latent_dim), val_dataset: (_, latnet_dim)
     # 평균과 공분산 계산
     mu1, sigma1 = gen_outputs.mean(axis=0), np.cov(gen_outputs, rowvar=False)
     mu2, sigma2 = val_dataset.mean(axis=0), np.cov(val_dataset, rowvar=False)
@@ -355,13 +302,14 @@ def convert_py_to_html(py_file_path, html_file_path):
         f.write(html_code)
 
     print(f"Converted {py_file_path} to {html_file_path} with syntax highlighting.")
-convert_py_to_html('mnist_train3.py', os.path.join(save_dir, 'mnist_train3.html'))
+convert_py_to_html('mnist_gan.py', os.path.join(save_dir, 'mnist_gan.html'))
 # ==========================================================
 
 # save ARGS in save_dir/args.txt
 with open(os.path.join(save_dir, 'args.txt'), 'w') as f:
     json.dump(ARGS.__dict__, f, indent=4)
     print(f"args 객체가 {save_dir}/args.txt 파일에 저장되었습니다.")
+
 
 # CSV 파일 초기화 (헤더 작성)
 df = pd.DataFrame(columns=['epoch', 'D_loss', 'G_loss', 'MI', 'FD', 'time'])
@@ -398,8 +346,8 @@ for epoch in range(1, epoch_num+1):
     pbar = tqdm(train_loader, desc=f"Epoch {epoch}/{epoch_num}", unit="batch")
 
     # 그림 그릴때 필요하다
-    gen_outputs = [] # (데이터수, 2**output_qubits) 출력들
-    gen_codes = [] # (데이터수, code_qubits) 코드들
+    gen_outputs = [] # (데이터수, latent_dim) 출력들
+    gen_codes = [] # (데이터수, code_dim) 코드들
     coeff = COEFF * (0.1 + 0.9 * (epoch/epoch_num)) # 0.1 ~ 1비율로 선형적으로 증가
 
     for batch_idx, (batch,) in enumerate(pbar):  # batch unpack
@@ -422,7 +370,7 @@ for epoch in range(1, epoch_num+1):
         D_opt.step()
 
         # train mine
-        code_input = generator_seed[:, :code_qubits] # (BATCH_SIZE, code_qubits) 코드만 추출
+        code_input = generator_seed[:, :code_dim] # (BATCH_SIZE, code_dim) 코드만 추출
         pred_xy = mine(code_input, fake_input)
         code_input_shuffle = code_input[torch.randperm(BATCH_SIZE)]
         pred_x_y = mine(code_input_shuffle, fake_input)
@@ -445,8 +393,8 @@ for epoch in range(1, epoch_num+1):
     D_scheduler.step()
     M_scheduler.step()
     
-    gen_outputs = np.concatenate(gen_outputs, axis=0) # (train_num, 2**output_qubits)
-    gen_codes = np.concatenate(gen_codes, axis=0) # (train_num, code_qubits)
+    gen_outputs = np.concatenate(gen_outputs, axis=0) # (train_num, latent_dim)
+    gen_codes = np.concatenate(gen_codes, axis=0) # (train_num, code_dim)
 
     D_loss, G_loss, mi = D_loss_sum/batch_num, G_loss_sum/batch_num, mi_sum/batch_num
 
@@ -475,7 +423,6 @@ for epoch in range(1, epoch_num+1):
     visualize_output_simple(gen_outputs, gen_codes, epoch, writer, image_save_dir) # save fig here
 
     # 각 epoch마다 generator 파라미터 저장
-    torch.save(generator.params, f'{param_save_dir}/generator_params_epoch{epoch}.pth')
+    torch.save(generator.state_dict(), f'{param_save_dir}/generator_epoch{epoch:03d}.pth')
     
     print("epoch: {}, D_loss: {}, G_loss: {}, MI = {}, FD = {}".format(epoch, D_loss, G_loss, mi, frechet_distance))
-
