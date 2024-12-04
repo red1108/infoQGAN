@@ -184,7 +184,7 @@ visualize_autoencoder(autoencoder, data)
     # n_qubits, code_qubits, noise_qubits, output_qubits 설정
 print("이번 학습으로 생성할 숫자는", TARGETS, "입니다.")
 # 원래는 DIGIT 하나만이었는데, 이제는 TARGETS 내부 숫자들을 모두 학습해야 한다.
-train_dataset = np.concatenate([data[f'{target}_latent'][:num_images_per_class//4] for target in TARGETS], axis=0)
+train_dataset = np.concatenate([data[f'{target}_latent'][:num_images_per_class//2] for target in TARGETS], axis=0)
 test_dataset = np.concatenate([data[f'{target}_latent'][num_images_per_class//2:num_images_per_class*3//4] for target in TARGETS], axis=0)
 val_dataset = np.concatenate([data[f'{target}_latent'][num_images_per_class*3//4:] for target in TARGETS], axis=0)
 train_size, test_size, val_size = len(train_dataset), len(test_dataset), len(val_dataset)
