@@ -46,6 +46,7 @@ DIGITS_STR = ""
 DIGITS = []
 TARGETS_STR = ""
 TARGETS = []
+n_layers = 10
 G_lr = 0.005
 M_lr = 0.0001
 D_lr = 0.001
@@ -105,6 +106,7 @@ if __name__ == "__main__":
     parser.add_argument("--model_type", choices=['InfoQGAN', 'QGAN'], required=True, help="Model type to use: InfoQGAN or QGAN")
     parser.add_argument("--DIGITS", type=str, required=True, help="Autoencoder trained digits")
     parser.add_argument("--TARGETS", type=str, required=True, help="Target digits")
+    parser.add_argument("--n_layers", type=int, default=10, help="Number of layers for QGAN")
     parser.add_argument("--G_lr", type=float, default=0.005, help="Learning rate for generator")
     parser.add_argument("--M_lr", type=float, default=0.0001, help="Learning rate for mine")
     parser.add_argument("--D_lr", type=float, default=0.001, help="Learning rate for discriminator")
@@ -128,6 +130,7 @@ if __name__ == "__main__":
     TARGETS = list(map(int, args.TARGETS))
     TARGETS_STR = args.TARGETS
 
+    n_layers = args.n_layers
     G_lr = args.G_lr
     M_lr = args.M_lr
     D_lr = args.D_lr
@@ -149,6 +152,7 @@ if __name__ == "__main__":
     for target in TARGETS:
         assert target in DIGITS, f"Error: TARGET {target} is not in the list of DIGITS {DIGITS}."
     
+    print(f"Number of Layers: {n_layers}")
     print(f"Generator Learning Rate: {G_lr}")
     print(f"Mine Learning Rate: {M_lr}")
     print(f"Discriminator Learning Rate: {D_lr}")
@@ -195,7 +199,6 @@ noise_qubits = n_qubits - code_qubits
 output_qubits = 5 # 출력 차원은 2**output_qubits 만큼.
 assert(2**output_qubits >= latent_dim)
 assert(code_qubits <= 2**n_qubits)
-n_layers = 20
 BATCH_SIZE = 16
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
