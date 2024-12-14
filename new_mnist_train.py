@@ -359,7 +359,7 @@ def convert_py_to_html(py_file_path, html_file_path):
         f.write(html_code)
 
     print(f"Converted {py_file_path} to {html_file_path} with syntax highlighting.")
-convert_py_to_html('mnist_train3.py', os.path.join(save_dir, 'mnist_train3.html'))
+convert_py_to_html('new_mnist_train.py', os.path.join(save_dir, 'new_mnist_train.html'))
 # ==========================================================
 
 # save ARGS in save_dir/args.txt
