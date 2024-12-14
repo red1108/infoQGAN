@@ -426,9 +426,13 @@ for epoch in range(1, epoch_num+1):
 
         # train mine
         code_input = generator_seed[:, :code_qubits] # (BATCH_SIZE, code_qubits) 코드만 추출
-        pred_xy = mine(code_input, fake_input)
+        # decoder을 거쳐 이미지를 만들어서 MINE에 넣는다.
+        with torch.no_grad():
+            reconstructed_images = autoencoder.decoder(generator_output)
+        flattened_images = reconstructed_images.view(reconstructed_images.size(0), -1) # (BATCH_SIZE, 784)
+        pred_xy = mine(code_input, reconstructed_images)
         code_input_shuffle = code_input[torch.randperm(BATCH_SIZE)]
-        pred_x_y = mine(code_input_shuffle, fake_input)
+        pred_x_y = mine(code_input_shuffle, reconstructed_images)
         mi = -torch.mean(pred_xy) + torch.log(torch.mean(torch.exp(pred_x_y)))
         M_opt.zero_grad()
         mi.requires_grad_(True)
