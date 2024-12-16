@@ -39,13 +39,15 @@ use_mine = True if train_type == "InfoQGAN" else False
 
 data_num = 1000
 data_type = "biased_diamond"
-noise_qubits = 3
+n_qubits = 5
 code_qubits = 2
-n_qubits = noise_qubits + code_qubits
+noise_qubits = n_qubits - code_qubits
 output_qubits = 2
-assert(output_qubits <= n_qubits) # 출력 큐빗은 qubit이하여야 한다.
+
 n_layers = 10
 BATCH_SIZE = 16
+SEED = 1
+epoch_num = 300
 
 G_lr = 0.001
 D_lr = 0.0003
@@ -56,63 +58,61 @@ coeff = 0.1
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Training parameters")
     parser.add_argument("--model_type", choices=['InfoQGAN', 'QGAN'], required=True, help="Model type to use: InfoQGAN or QGAN")
+    parser.add_argument("--data_num", type=int, default=1000, help="Number of data points")
+    parser.add_argument("--data_type", choices=['biased_diamond', 'biased_circle'], required=True, help="Data type to use")
+
+    parser.add_argument("--n_qubits", type=int, default=5, help="Number of qubits")
+    parser.add_argument("--code_qubits", type=int, default=2, help="Number of code qubits")
     parser.add_argument("--n_layers", type=int, default=10, help="Number of layers for QGAN")
+
     parser.add_argument("--G_lr", type=float, default=0.001, help="Learning rate for generator")
     parser.add_argument("--M_lr", type=float, default=0.0003, help="Learning rate for mine")
     parser.add_argument("--D_lr", type=float, default=0.001, help="Learning rate for discriminator")
     parser.add_argument("--coeff", type=float, default=0.1, help="Coefficient value used for InfoQGAN (not used for QGAN)")
-    parser.add_argument("--seed", type=float, default=1.5, help="Seed value range")
-    parser.add_argument("--smooth", type=float, default=0.0, help="Discriminator label smoothing (efficient for QGAN)")
-    parser.add_argument("--epochs", type=int, required=True, help="Number of epochs")
-    parser.add_argument("--code", type=int, default=3, help="Code dimension")
+
+    parser.add_argument("--seed", type=float, default=1.0, help="Seed value range")
+    parser.add_argument("--epochs", type=int, default=300, help="Number of epochs")
+
     
     args = parser.parse_args()
     ARGS = args
-
+    
     train_type = args.model_type
     use_mine = (train_type == 'InfoQGAN')
-    DIGITS = list(map(int, args.DIGITS))
-    DIGITS_STR = args.DIGITS
-    TARGETS = list(map(int, args.TARGETS))
-    TARGETS_STR = args.TARGETS
+    data_type = args.data_type
+    data_num = args.data_num
+
+    n_qubits = args.n_qubits
+    code_qubits = args.code_qubits
+    noise_qubits = n_qubits - code_qubits
+
+    assert(output_qubits <= n_qubits) # 출력 큐빗은 qubit이하여야 한다.
+    assert(code_qubits <= n_qubits) # 코드 큐빗은 qubit이하여야 한다.
 
     n_layers = args.n_layers
     G_lr = args.G_lr
     M_lr = args.M_lr
     D_lr = args.D_lr
     COEFF = args.coeff
-    smooth = args.smooth
-    SEED_R = args.seed
-    assert SEED_R > 1, "Error: SEED_R must be greater than 1."
-    SEED_DIM = args.seed_dim
+    SEED = args.seed
     epoch_num = args.epochs
-    gamma = args.gamma
-    latent_dim = args.latent_dim
-    num_images_per_class = args.num_images_per_class
-    code_qubits = args.code
+
 
     print(f"Use Mine: {use_mine}")
-    print(f"DIGITS: {DIGITS}")
-    print(f"TARGETS: {TARGETS}")
-    # assert that TARGETS are in DIGITS
-    for target in TARGETS:
-        assert target in DIGITS, f"Error: TARGET {target} is not in the list of DIGITS {DIGITS}."
-    
-    print(f"Number of Layers: {n_layers}")
+    print(f"Data Type: {data_type}, Data size: {data_num}")
+
+    print(f"Number of Qubits: {n_qubits}")
+    print(f"Number of Code Qubits: {code_qubits}")
+    print(f"Number of Layers: {n_layers}, total parameters: {n_layers*n_qubits}")
+
     print(f"Generator Learning Rate: {G_lr}")
     print(f"Mine Learning Rate: {M_lr}")
     print(f"Discriminator Learning Rate: {D_lr}")
     if use_mine:
         print(f"InfoQGAN coefficient: {COEFF}")
-    print(f"Smooth: {smooth}")
-    print(f"Seed Range: 1 ~ {SEED_R}")
-    print(f"Seed Dimension: {SEED_DIM}")
+    
+    print(f"Seed Range: {-SEED} ~ {SEED}")
     print(f"Epochs: {epoch_num}")
-    print(f"Gamma: {gamma}")
-    print(f"Latent Dimension: {latent_dim}")
-    print(f"Code Qubits: {code_qubits}")
-    print(f"Number of Images per Class: {num_images_per_class}")
-
 
 # Load data
 train_in = np.loadtxt(f'data/2D/{data_type}_{data_num}_1.txt')
@@ -240,3 +240,162 @@ def visualize_output_simple(log_gen_outputs, log_gen_codes, epoch, writer, image
     plt.close(fig1)
     plt.close(fig2)
     plt.close(fig3)
+
+current_time = datetime.now().strftime("%b%d_%H-%M")  # "Aug13_14-12" 형식
+save_dir = f"./runs/{data_type}_{data_num}_{use_mine}_{current_time}"
+scalar_save_path = os.path.join(save_dir, f"{data_type}_{data_num}_{use_mine}_{current_time}.csv")
+image_save_dir = os.path.join(save_dir, "images")
+numpy_save_dir = os.path.join(save_dir, "numpy")
+os.makedirs(image_save_dir, exist_ok=True)
+os.makedirs(numpy_save_dir, exist_ok=True)
+
+# ======================파이썬 코드를 html 로 만듦=======================
+from pygments import highlight
+from pygments.lexers import PythonLexer
+from pygments.formatters import HtmlFormatter
+
+def convert_py_to_html(py_file_path, html_file_path):
+    """Converts a Python script to a syntax-highlighted HTML file."""
+    with open(py_file_path, 'r', encoding='utf-8') as f:
+        code = f.read()
+
+    html_code = highlight(code, PythonLexer(), HtmlFormatter(full=True, linenos=True))
+    
+    with open(html_file_path, 'w', encoding='utf-8') as f:
+        f.write(html_code)
+
+    print(f"Converted {py_file_path} to {html_file_path} with syntax highlighting.")
+convert_py_to_html('new_2d_train.py', os.path.join(save_dir, 'new_2d_train.html'))
+# ==========================================================
+
+# save ARGS in save_dir/args.txt
+with open(os.path.join(save_dir, 'args.txt'), 'w') as f:
+    json.dump(ARGS.__dict__, f, indent=4)
+    print(f"args 객체가 {save_dir}/args.txt 파일에 저장되었습니다.")
+
+
+# CSV 파일 초기화 (헤더 작성)
+if not os.path.exists(scalar_save_path):
+    df = pd.DataFrame(columns=['epoch', 'D_loss', 'G_loss', 'MI', 'D_ks', 'p_value', 'angle', 'time'] + 
+                  [f'Corr/code{i}-{axis}' for i in range(code_qubits) for axis in ['x', 'y']])
+
+# TensorBoard SummaryWriter 초기화
+writer = SummaryWriter(log_dir=save_dir)
+
+start_time = time.time()
+
+for epoch in range(1, epoch_num+1):
+    G_loss_sum = 0.0
+    D_loss_sum = 0.0
+    mi_sum = 0.0
+    batch_num = len(train_in) // BATCH_SIZE
+    pbar = tqdm(range(batch_num))
+
+    # 그림 그릴때 필요하다
+    gen_outputs = [] # (데이터수, 2) 생성한 모든 점의 좌표들
+    gen_codes = [] # (데이터수, 2) 점 찍는데 들어간 code들
+
+    for batch_idx in pbar:
+        batch = torch.FloatTensor(train_in[BATCH_SIZE * batch_idx : BATCH_SIZE * batch_idx + BATCH_SIZE])
+
+        # train generator
+        generator_seed = torch.empty((BATCH_SIZE, n_qubits)).uniform_(-SEED, SEED)
+        generator_output, generator_loss = generator_train_step(generator_seed, use_mine=use_mine)
+        G_opt.zero_grad()
+        generator_loss.requires_grad_(True)
+        generator_loss.backward()
+        G_opt.step()
+        
+        # train discriminator
+        fake_input = generator_output.detach().to(torch.float32)
+        disc_loss = disc_cost_fn(batch, fake_input, smoothing=False)
+        D_opt.zero_grad()
+        disc_loss.requires_grad_(True)
+        disc_loss.backward()
+        D_opt.step()
+
+        # train mine
+        code_input = generator_seed[:, -code_qubits:] # (BATCH_SIZE, code_qubits) 코드만 추출
+        pred_xy = mine(code_input, fake_input)
+        code_input_shuffle = code_input[torch.randperm(BATCH_SIZE)]
+        pred_x_y = mine(code_input_shuffle, fake_input)
+        mi = -torch.mean(pred_xy) + torch.log(torch.mean(torch.exp(pred_x_y)))
+        M_opt.zero_grad()
+        mi.requires_grad_(True)
+        mi.backward()
+        M_opt.step()
+
+        D_loss_sum += disc_loss.item()
+        G_loss_sum += generator_loss.item()
+        mi_sum -= mi.item() # (-1)곱해져 있어서 빼야함.
+
+        gen_outputs.append(fake_input.numpy())
+        gen_codes.append(code_input.numpy())
+
+        pbar.set_postfix({'G_loss': G_loss_sum/(batch_idx+1), 'D_loss': D_loss_sum/(batch_idx+1), 'MI': mi_sum/(batch_idx+1)})
+
+    # G_scheduler.step()
+    # D_scheduler.step()
+    # M_scheduler.step()
+    
+    gen_outputs = np.concatenate(gen_outputs, axis=0) # (train_num, 2)
+    gen_codes = np.concatenate(gen_codes, axis=0) # (train_num, 2)
+
+    D_loss, G_loss, mi = D_loss_sum/batch_num, G_loss_sum/batch_num, mi_sum/batch_num
+    p_value, D_ks = ndtest.ks2d2s(gen_outputs[:, 0], gen_outputs[:, 1], train_in[:, 0], train_in[:, 1], extra=True)
+
+    writer.add_scalar('Loss/d_loss', D_loss, epoch)
+    writer.add_scalar('Loss/g_loss', G_loss, epoch)
+    writer.add_scalar('Metrics/mi', mi, epoch)
+    writer.add_scalar('Metrics/D_ks', D_ks, epoch)
+    writer.add_scalar('Metrics/p_value', p_value, epoch)
+
+    
+
+    # code와 x, y의 상관관계를 측정 후 기록
+    df = pd.DataFrame({'x': gen_outputs[:, 0], 'y': gen_outputs[:, 1]})
+    for i in range(code_qubits):
+        df[f'code{i}'] = gen_codes[:, i]
+    corr_mat = df.corr().to_numpy()
+    for i in range(code_qubits):
+        writer.add_scalar(f'Corr/code{i}-x', corr_mat[0, i+2], epoch)
+        writer.add_scalar(f'Corr/code{i}-y', corr_mat[1, i+2], epoch)
+
+    # code0과 code1 사이의 각도 계산 (벡터의 내적 및 크기 사용)
+    cos_theta = (corr_mat[0, 2] * corr_mat[0, 3] + corr_mat[1, 2] * corr_mat[1, 3]) / (
+        np.sqrt(corr_mat[0, 2]**2 + corr_mat[1, 2]**2) * np.sqrt(corr_mat[0, 3]**2 + corr_mat[1, 3]**2)
+    )
+    theta_degrees = np.degrees(np.arccos(np.clip(cos_theta, -1.0, 1.0)))
+
+    # 예각으로 변환
+    theta_degrees = min(theta_degrees, 180 - theta_degrees)
+    writer.add_scalar('Corr/angle', theta_degrees, epoch)
+
+
+    # 스칼라 값 CSV로 덮어쓰기 저장
+    file_exists = os.path.isfile(scalar_save_path)
+    new_data = pd.DataFrame({
+        'epoch': [epoch],
+        'D_loss': [D_loss],
+        'G_loss': [G_loss],
+        'MI': [mi],
+        'D_ks': [D_ks],
+        'p_value': [p_value],
+        'time': [int((time.time() - start_time)*1000)],
+        **{f'Corr/code{i}-{axis}': [corr_mat[j, i+2]] for i in range(code_qubits) for j, axis in enumerate(['x', 'y'])},
+        'angle': [theta_degrees]  # code0과 code1 사이의 예각 추가
+    })
+
+    new_data.to_csv(scalar_save_path, mode='a',  header=not file_exists)
+    
+    visualize_output_simple(gen_outputs, gen_codes, epoch, writer, image_save_dir) # save fig here
+
+    # 각 epoch마다 numpy의 savetxt를 사용하여 저장
+    output_file_path = os.path.join(numpy_save_dir, f"gen_outputs_epoch_{epoch}.txt")
+    codes_file_path = os.path.join(numpy_save_dir, f"gen_codes_epoch_{epoch}.txt")
+
+    np.savetxt(output_file_path, gen_outputs)
+    np.savetxt(codes_file_path, gen_codes)
+    
+    #print("epoch: {}, D_loss: {}, G_loss: {}, MI = {}".format(epoch, D_loss, G_loss, mi))
+    #print("좌표값 평균 = ", np.mean(gen_outputs[:,0]), np.mean(gen_outputs[:,1]), "디버그 =", generator.params[0][0][0].item())
