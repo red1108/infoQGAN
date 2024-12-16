@@ -130,8 +130,8 @@ importlib.reload(Discriminator)  # 모듈 갱신
 importlib.reload(MINE)  # 모듈 갱신
 
 # 생성자 파라미터 초기화 및 모듈 불러오기
-generator_initial_params = Variable(torch.tensor(np.random.normal(-np.pi/2 , np.pi/2, (n_layers, n_qubits, 3))), requires_grad=True)
-generator = QGAN.QGAN(n_qubits, output_qubits, n_layers, generator_initial_params, dev)
+generator_initial_params = Variable(torch.tensor(np.random.normal(-np.pi/2 , np.pi/2, (n_layers, n_qubits, 1))), requires_grad=True)
+generator = QGAN.QGAN2(n_qubits, output_qubits, n_layers, generator_initial_params, dev)
 
 # 판별자, MINE 초기화
 discriminator = Discriminator.LinearDiscriminator(input_dim = output_qubits)
@@ -241,7 +241,7 @@ def visualize_output_simple(log_gen_outputs, log_gen_codes, epoch, writer, image
     plt.close(fig2)
     plt.close(fig3)
 
-current_time = datetime.now().strftime("%b%d_%H-%M")  # "Aug13_14-12" 형식
+current_time = datetime.now().strftime("%b%d_%H_%M_%S")  # "Aug13_14-12" 형식
 save_dir = f"./runs/{data_type}_{data_num}_{use_mine}_{current_time}"
 scalar_save_path = os.path.join(save_dir, f"{data_type}_{data_num}_{use_mine}_{current_time}.csv")
 image_save_dir = os.path.join(save_dir, "images")

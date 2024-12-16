@@ -86,6 +86,7 @@ class QGAN2:
         return generator_output
 
 class QGAN3:
+    # 여러 깊이로 seed를 임베딩할수 있게 함.
     def __init__(self, n_qubits, output_qubits, n_layers, params, dev):
         self.n_qubits = n_qubits
         self.n_layers = n_layers
