@@ -3,7 +3,6 @@ tqdm            # Utility for displaying progress bars, useful in tracking loops
 tensorboard     # Tool for tracking, visualizing metrics, and monitoring training of models
 pennylane       # Quantum machine learning library for implementing quantum algorithms
 argparse        # Built-in library for parsing command-line arguments to configure script execution
-json            # Built-in library for handling JSON data, useful for configuration and data storage
 scipy           # Scientific computing library, providing functions like sqrtm for matrix operations
 pygments        # Syntax highlighting tool, helpful for exporting syntax-highlighted HTML code
 pandas          # Data manipulation library, essential for data analysis and preprocessing
