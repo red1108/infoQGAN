@@ -3,7 +3,7 @@ import torch
 import numpy as np
 
 class QGenerator:
-    def __init__(self, n_qubits, output_qubits, n_layers, params, dev):
+    def __init__(self, n_qubits, output_qubits, n_layers, params, dev, give_me_states=False):
         self.n_qubits = n_qubits
         self.n_layers = n_layers
         self.params = params
@@ -15,6 +15,7 @@ class QGenerator:
         
         self.dev = dev  # pennylane device
         self.generator_circuit_qnode = qml.QNode(self.circuit, self.dev, interface="torch")
+        self.give_me_states = give_me_states
         
     def init_circuit(self, generator_input):
         for i in range(self.n_qubits):
@@ -37,12 +38,29 @@ class QGenerator:
         for param in self.params:
             self.single_layer(param)
 
+        if self.give_me_states:
+            return qml.probs(wires=range(self.output_qubits)), qml.state()
         return qml.probs(wires=range(self.output_qubits)) # |00>, |01>, |10>, |11> 이런식으로 모든 basis들의 확률값을 반환
 
     def forward(self, generator_input):
-        generator_output = [self.generator_circuit_qnode(single_in) for single_in in generator_input]  # (BATCH_SIZE, 2**output_qubits)
-        generator_output = torch.stack(generator_output)  # (BATCH_SIZE, 2**output_qubits)
-        return generator_output
+        if self.give_me_states:
+            all_probs = []
+            all_states = []
+            for single_in in generator_input:
+                # QNode에서 (probs, state)를 반환
+                probs, state = self.generator_circuit_qnode(single_in)
+                all_probs.append(probs)
+                all_states.append(state)
+            all_probs = torch.stack(all_probs)  # (BATCH_SIZE, 2**output_qubits)
+            all_states = torch.stack(all_states)  # (BATCH_SIZE, 2**n_qubits)
+            return all_probs, all_states
+
+        else:
+            # give_me_states=False이면, probs만 반환
+            generator_output = [self.generator_circuit_qnode(single_in)
+                                for single_in in generator_input]
+            generator_output = torch.stack(generator_output)  # (BATCH_SIZE, 2**output_qubits)
+            return generator_output
     
 class QGAN2:
     def __init__(self, n_qubits, output_qubits, n_layers, params, dev):
