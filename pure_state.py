@@ -163,7 +163,7 @@ def combine_quantum_states(states, train_size, combine_mode):
 
 
 train_dataset = combine_quantum_states(basis_states, train_size, "uniform")
-train_tensor = torch.tensor(train_dataset, dtype=torch.complex32)
+train_tensor = torch.tensor(train_dataset, dtype=torch.complex128)
 assert np.allclose(np.linalg.norm(train_dataset, axis=1), np.ones(train_size)), "combined states are not normalized"
 
 def generator_train_step(generator_seed, coeff, use_mine = False):
@@ -174,7 +174,7 @@ def generator_train_step(generator_seed, coeff, use_mine = False):
     code_input = generator_seed[:, :code_qubits] # 입력중에서 code만 뽑는다. (BATCH_SIZE, code_qubits)
     generator_probs, generator_states = generator.forward(generator_seed) # 출력을 뽑아낸다 (BATCH_SIZE, 2**output_qubits) * 2
     generator_probs = generator_probs.to(torch.float32)
-    generator_states = generator_states.to(torch.float32)
+    generator_states = generator_states.to(torch.complex128)
     
     disc_output = discriminator.forward(generator_states).to(torch.float32) # quantum discriminator
     gan_loss = torch.log(1-disc_output).mean()
@@ -186,7 +186,7 @@ def generator_train_step(generator_seed, coeff, use_mine = False):
         mi = torch.mean(pred_xy) - torch.log(torch.mean(torch.exp(pred_x_y)))
         gan_loss -= coeff * mi
 
-    return generator_states, gan_loss
+    return generator_probs, generator_states, gan_loss
 
 disc_loss_fn = nn.BCELoss()
 def disc_cost_fn(real_input, fake_input):
@@ -295,23 +295,24 @@ for epoch in range(1, epoch_num+1):
     for batch_idx, (batch,) in enumerate(pbar):  # batch unpack
         # train generator
         generator_seed = torch.empty((BATCH_SIZE, n_qubits)).uniform_(-SEED, SEED).to(ml_device) # 실제 범위 = +-SEED * np.pi/2.
-        generator_state, generator_loss = generator_train_step(generator_seed, coeff, use_mine=use_mine)
+        generator_probs, generator_state, generator_loss = generator_train_step(generator_seed, coeff, use_mine=use_mine)
         G_opt.zero_grad()
         generator_loss.requires_grad_(True)
         generator_loss.backward()
         G_opt.step()
         # train discriminator
-        fake_input = generator_state.detach().to(torch.float32)
+        fake_input = generator_state.detach().to(torch.complex128)
         disc_loss = disc_cost_fn(batch, fake_input)
         D_opt.zero_grad()
         disc_loss.requires_grad_(True)
         disc_loss.backward()
         D_opt.step()
         # train MINE
+        generator_probs = generator_probs.detach().to(torch.float32)
         code_input = generator_seed[:, :code_qubits] # (BATCH_SIZE, code_qubits) 코드만 추출
-        pred_xy = mine(code_input, fake_input)
+        pred_xy = mine(code_input, generator_probs)
         code_input_shuffle = code_input[torch.randperm(BATCH_SIZE)]
-        pred_x_y = mine(code_input_shuffle, fake_input)
+        pred_x_y = mine(code_input_shuffle, generator_probs)
         mi = -torch.mean(pred_xy) + torch.log(torch.mean(torch.exp(pred_x_y)))
         M_opt.zero_grad()
         mi.requires_grad_(True)
