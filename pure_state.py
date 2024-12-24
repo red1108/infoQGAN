@@ -238,6 +238,30 @@ param_save_dir = os.path.join(save_dir, "params")
 os.makedirs(image_save_dir, exist_ok=True)
 os.makedirs(param_save_dir, exist_ok=True)
 
+# ======================파이썬 코드를 html 로 만듦=======================
+from pygments import highlight
+from pygments.lexers import PythonLexer
+from pygments.formatters import HtmlFormatter
+
+def convert_py_to_html(py_file_path, html_file_path):
+    """Converts a Python script to a syntax-highlighted HTML file."""
+    with open(py_file_path, 'r', encoding='utf-8') as f:
+        code = f.read()
+
+    html_code = highlight(code, PythonLexer(), HtmlFormatter(full=True, linenos=True))
+    
+    with open(html_file_path, 'w', encoding='utf-8') as f:
+        f.write(html_code)
+
+    print(f"Converted {py_file_path} to {html_file_path} with syntax highlighting.")
+convert_py_to_html('pure_state.py', os.path.join(save_dir, 'pure_state.html'))
+# ==========================================================
+
+# save ARGS in save_dir/args.txt
+with open(os.path.join(save_dir, 'args.txt'), 'w') as f:
+    json.dump(ARGS.__dict__, f, indent=4)
+    print(f"args 객체가 {save_dir}/args.txt 파일에 저장되었습니다.")
+
 writer = SummaryWriter(log_dir=save_dir)
 
 # CSV 파일 초기화 (헤더 작성)
@@ -304,7 +328,7 @@ for epoch in range(1, epoch_num+1):
     G_scheduler.step()
     D_scheduler.step()
     M_scheduler.step()
-    
+
     gen_states = np.concatenate(gen_states, axis=0) # (train_num, 2**n_qubits)
     gen_seeds = np.concatenate(gen_seeds, axis=0) # (train_num, code_qubits)
     D_loss, G_loss, mi = D_loss_sum/batch_num, G_loss_sum/batch_num, mi_sum/batch_num
