@@ -163,7 +163,7 @@ def combine_quantum_states(states, train_size, combine_mode):
 
 
 train_dataset = combine_quantum_states(basis_states, train_size, "uniform")
-train_tensor = torch.tensor(train_dataset, dtype=torch.float32)
+train_tensor = torch.tensor(train_dataset, dtype=torch.complex32)
 assert np.allclose(np.linalg.norm(train_dataset, axis=1), np.ones(train_size)), "combined states are not normalized"
 
 def generator_train_step(generator_seed, coeff, use_mine = False):
