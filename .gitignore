@@ -3,6 +3,7 @@ visualize/tmp # 여기에 이미지 생성 후, 건질만한 것들 visualize로
 venv
 test.ipynb
 data/MNIST/raw
+past_runs
 정리/
 
 # cache
