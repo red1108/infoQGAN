@@ -62,6 +62,7 @@ if __name__ == "__main__":
     parser.add_argument("--model_type", choices=['InfoQGAN', 'QGAN'], required=True, help="Model type to use: InfoQGAN or QGAN")
     parser.add_argument("--n_qubits", type=int, default=3, help="Number of qubits")
     parser.add_argument("--n_basis", type=int, required=True, help="Number of basis states")
+    parser.add_argument("--train_size", type=int, default=300, help="Training data size")
     parser.add_argument("--G_layers", type=int, default=5, help="Number of layers for generator")
     parser.add_argument("--D_layers", type=int, default=5, help="Number of layers for discriminator")
     parser.add_argument("--G_lr", type=float, default=0.001, help="Learning rate for generator")
@@ -78,6 +79,7 @@ if __name__ == "__main__":
     ARGS = args
 
     train_type = args.model_type
+    train_size = args.train_size
     use_mine = (train_type == 'InfoQGAN')
     n_qubits = args.n_qubits
     dim = 2**n_qubits
