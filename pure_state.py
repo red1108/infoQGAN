@@ -35,6 +35,7 @@ from modules.utils import generate_orthonormal_states
 
 # 전역 변수 선언
 train_type = "InfoQGAN"
+data_type = torch.float32
 use_mine = True if train_type == "InfoQGAN" else False
 number_of_basis = 2
 n_qubits = 3
@@ -60,6 +61,7 @@ SEED = 0.5
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Training parameters")
     parser.add_argument("--model_type", choices=['InfoQGAN', 'QGAN'], required=True, help="Model type to use: InfoQGAN or QGAN")
+    parser.add_argument("--data_type", choices=['real', 'complex'], required=True, help="Data type to use: real or complex")
     parser.add_argument("--n_qubits", type=int, default=3, help="Number of qubits")
     parser.add_argument("--n_basis", type=int, required=True, help="Number of basis states")
     parser.add_argument("--train_size", type=int, default=300, help="Training data size")
@@ -79,12 +81,16 @@ if __name__ == "__main__":
     ARGS = args
 
     train_type = args.model_type
+    if args.data_type == 'real':
+        data_type = torch.float32
+    elif args.data_type == 'complex':
+        data_type = torch.complex128
     train_size = args.train_size
     use_mine = (train_type == 'InfoQGAN')
     n_qubits = args.n_qubits
     dim = 2**n_qubits
     number_of_basis = args.n_basis
-    basis_states = generate_orthonormal_states(dim, number_of_basis) # 학습에 사용할 기본 basis들
+    basis_states = generate_orthonormal_states(dim, number_of_basis, args.data_type) # 학습에 사용할 기본 basis들
 
     G_layers = args.G_layers
     D_layers = args.D_layers
@@ -104,6 +110,7 @@ if __name__ == "__main__":
     epoch_num = args.epochs
     gamma = args.gamma
 
+    print(f"Model Type: {train_type}, Data Type: {data_type}")
     print(f"Basis States: ({number_of_basis}, {dim})")
     print(f"Train Size: {train_size}")
     print(f"Use Mine: {use_mine}")
@@ -128,16 +135,24 @@ quantum_device = qml.device("default.qubit", wires=n_qubits)
 print("고전 머신러닝 device =", ml_device, "양자 회로 backend =", quantum_device)
 
 # 모델 정의
-generator_initial_params = Variable(torch.tensor(np.random.normal(-np.pi/2, np.pi/2, (G_layers, n_qubits, 3))), requires_grad=True)
-generator = QGAN.QGenerator(n_qubits, n_qubits, G_layers, generator_initial_params, quantum_device, give_me_states=True) # 상태를 얻어야 Discriminator에 넣음.
+if data_type == torch.float32:
+    generator_initial_params = Variable(torch.tensor(np.random.normal(-np.pi, np.pi, (G_layers, n_qubits, 1))), requires_grad=True)
+elif data_type == torch.complex128:
+    generator_initial_params = Variable(torch.tensor(np.random.normal(-np.pi, np.pi, (G_layers, n_qubits, 3))), requires_grad=True)
+generator_mode = "RY" if data_type == torch.float32 else "RXYZ"
+generator = QGAN.QGenerator(n_qubits, n_qubits, G_layers, generator_initial_params, quantum_device, mode=generator_mode) # 상태를 얻어야 Discriminator에 넣음.
 
-discriminator_initial_params = Variable(torch.tensor(np.random.normal(-np.pi/2 , np.pi/2, (D_layers, n_qubits, 3))), requires_grad=True)
-discriminator = QGAN.QDiscriminator(n_qubits, D_layers, discriminator_initial_params, quantum_device)
+if data_type == torch.float32:
+    discriminator = Discriminator.LinearDiscriminator(input_dim = 2**n_qubits, hidden_size=100)
+
+elif data_type == torch.complex128:
+    discriminator_initial_params = Variable(torch.tensor(np.random.normal(-np.pi, np.pi, (D_layers, n_qubits, 3))), requires_grad=True)
+    discriminator = Discriminator.QDiscriminator(n_qubits, D_layers, discriminator_initial_params, quantum_device)
 
 mine = MINE.LinearMine(code_dim=code_qubits, output_dim=2**n_qubits, size=100)
 
-G_opt = torch.optim.Adam([generator.params], lr=G_lr)
-D_opt = torch.optim.Adam([discriminator.params], lr=D_lr)
+G_opt = torch.optim.Adam(generator.parameters(), lr=G_lr)
+D_opt = torch.optim.Adam(discriminator.parameters(), lr=D_lr)
 M_opt = torch.optim.Adam(mine.parameters(), lr=M_lr)
 G_scheduler = torch.optim.lr_scheduler.StepLR(G_opt, step_size=30, gamma=gamma)
 D_scheduler = torch.optim.lr_scheduler.StepLR(D_opt, step_size=30, gamma=gamma)
@@ -163,7 +178,7 @@ def combine_quantum_states(states, train_size, combine_mode):
 
 
 train_dataset = combine_quantum_states(basis_states, train_size, "uniform")
-train_tensor = torch.tensor(train_dataset, dtype=torch.complex128)
+train_tensor = torch.tensor(train_dataset, dtype=data_type).to(ml_device)
 assert np.allclose(np.linalg.norm(train_dataset, axis=1), np.ones(train_size)), "combined states are not normalized"
 
 def generator_train_step(generator_seed, coeff, use_mine = False):
@@ -172,11 +187,12 @@ def generator_train_step(generator_seed, coeff, use_mine = False):
     generator_input (torch.Tensor(BATCH_SIZE, seed_dim)): 생성기 입력 seed (code+noise).
     '''
     code_input = generator_seed[:, :code_qubits] # 입력중에서 code만 뽑는다. (BATCH_SIZE, code_qubits)
-    generator_probs, generator_states = generator.forward(generator_seed) # 출력을 뽑아낸다 (BATCH_SIZE, 2**output_qubits) * 2
-    generator_probs = generator_probs.to(torch.float32)
-    generator_states = generator_states.to(torch.complex128)
+    generator_states = generator.forward(generator_seed) # 출력을 뽑아낸다 (BATCH_SIZE, 2**output_qubits) * 2
+    generator_probs = abs(generator_states).to(torch.float32)
+    generator_states = generator_states.to(data_type)
     
-    disc_output = discriminator.forward(generator_states).to(torch.float32) # quantum discriminator
+    disc_output = discriminator(generator_states) # 밑에 코드에서 정의됨
+    # gan_loss = torch.log(1-disc_output).mean()
     gan_loss = torch.log(1-disc_output).mean()
     
     if use_mine:
@@ -192,8 +208,11 @@ disc_loss_fn = nn.BCELoss()
 def disc_cost_fn(real_input, fake_input):
     batch_num = real_input.shape[0]
 
-    disc_real = discriminator.forward(real_input).unsqueeze(1).to(torch.float32)
-    disc_fake = discriminator.forward(fake_input).unsqueeze(1).to(torch.float32)
+
+    disc_real = discriminator(real_input)
+    disc_fake = discriminator(fake_input)
+    #disc_real = discriminator.forward(real_input).unsqueeze(1).to(torch.float32)
+    #disc_fake = discriminator.forward(fake_input).unsqueeze(1).to(torch.float32)
 
     real_label = torch.ones((batch_num, 1)).to(ml_device)
     fake_label = torch.zeros((batch_num, 1)).to(ml_device)
@@ -301,7 +320,7 @@ for epoch in range(1, epoch_num+1):
         generator_loss.backward()
         G_opt.step()
         # train discriminator
-        fake_input = generator_state.detach().to(torch.complex128)
+        fake_input = generator_state.detach().to(data_type)
         disc_loss = disc_cost_fn(batch, fake_input)
         D_opt.zero_grad()
         disc_loss.requires_grad_(True)

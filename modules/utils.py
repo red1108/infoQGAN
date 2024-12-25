@@ -21,8 +21,9 @@ def convert_ipynb_to_html(ipynb_file_path, output_html_path):
     print(f"HTML 파일이 {output_html_path}에 저장되었습니다.")
 
 
-def generate_orthonormal_states(dim, m):
+def generate_orthonormal_states(dim, m, mode="complex"):
     assert dim >= m, "dim >= number of orthogonal states"
+    assert mode in ["real", "complex"], "mode should be 'real' or 'complex'"
     states = []
     max_attempts = 1000 * m  # 무한 루프 방지를 위해 충분히 큰 반복횟수 제한
     attempts = 0
@@ -30,7 +31,10 @@ def generate_orthonormal_states(dim, m):
     while len(states) < m and attempts < max_attempts:
         attempts += 1
         # 랜덤 복소 상태 벡터 생성
-        state = np.random.normal(size=(dim,)) + 1j * np.random.normal(size=(dim,))
+        if mode == "real":
+            state = np.random.normal(size=(dim,))
+        elif mode == "complex":
+            state = np.random.normal(size=(dim,)) + 1j * np.random.normal(size=(dim,))
 
         # 이전에 선택된 상태들과 직교화 (Gram-Schmidt)
         for prev_state in states:
