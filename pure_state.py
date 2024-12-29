@@ -361,6 +361,14 @@ for epoch in range(1, epoch_num+1):
         for j in range(number_of_basis):
             correlation_matrix[i, j] = np.corrcoef(gen_seeds[:, i], magnitudes[:, j])[0, 1]
 
+    # calculation all angle between correlation_matrix[i, :] and correlation_matrix[j, :]
+    for i in range(n_qubits):
+        for j in range(i+1, n_qubits):
+            cos_theta = np.dot(correlation_matrix[i, :], correlation_matrix[j, :]) / (np.linalg.norm(correlation_matrix[i, :]) * np.linalg.norm(correlation_matrix[j, :]))
+            theta_degrees = np.degrees(np.arccos(np.clip(cos_theta, -1.0, 1.0)))
+            theta_degrees = min(theta_degrees, 180 - theta_degrees) # 예각으로 변환
+            writer.add_scalar(f'Angle/angle{i}-{j}', theta_degrees, epoch)
+
     writer.add_scalar('Loss/d_loss', D_loss, epoch)
     writer.add_scalar('Loss/g_loss', G_loss, epoch)
     writer.add_scalar('Metrics/mi', mi, epoch)
