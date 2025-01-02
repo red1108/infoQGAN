@@ -362,12 +362,27 @@ for epoch in range(1, epoch_num+1):
             correlation_matrix[i, j] = np.corrcoef(gen_seeds[:, i], magnitudes[:, j])[0, 1]
 
     # calculation all angle between correlation_matrix[i, :] and correlation_matrix[j, :]
+    code_angle_sum = 0
+    noise_angle_sum = 0
+    cross_angle_sum = 0
     for i in range(n_qubits):
         for j in range(i+1, n_qubits):
             cos_theta = np.dot(correlation_matrix[i, :], correlation_matrix[j, :]) / (np.linalg.norm(correlation_matrix[i, :]) * np.linalg.norm(correlation_matrix[j, :]))
             theta_degrees = np.degrees(np.arccos(np.clip(cos_theta, -1.0, 1.0)))
             theta_degrees = min(theta_degrees, 180 - theta_degrees) # 예각으로 변환
             writer.add_scalar(f'Angle/angle{i}-{j}', theta_degrees, epoch)
+            if i < code_qubits and j < code_qubits:
+                code_angle_sum += theta_degrees
+            elif i >= code_qubits and j >= code_qubits:
+                noise_angle_sum += theta_degrees
+            else:
+                cross_angle_sum += theta_degrees
+    code_angle_avg = code_angle_sum / (code_qubits * (code_qubits - 1) / 2)
+    noise_angle_avg = noise_angle_sum / ((n_qubits - code_qubits) * (n_qubits - code_qubits - 1) / 2)
+    cross_angle_avg = cross_angle_sum / (code_qubits * (n_qubits - code_qubits))
+    writer.add_scalar('Angle/Code_Angle', code_angle_avg, epoch)
+    writer.add_scalar('Angle/Noise_Angle', noise_angle_avg, epoch)
+    writer.add_scalar('Angle/Cross_Angle', cross_angle_avg, epoch)
 
     writer.add_scalar('Loss/d_loss', D_loss, epoch)
     writer.add_scalar('Loss/g_loss', G_loss, epoch)
