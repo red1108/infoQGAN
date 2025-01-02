@@ -1,4 +1,5 @@
 import math
+from itertools import product
 import os
 import random
 import time
@@ -158,26 +159,45 @@ G_scheduler = torch.optim.lr_scheduler.StepLR(G_opt, step_size=30, gamma=gamma)
 D_scheduler = torch.optim.lr_scheduler.StepLR(D_opt, step_size=30, gamma=gamma)
 M_scheduler = torch.optim.lr_scheduler.StepLR(M_opt, step_size=30, gamma=gamma)
 
+from itertools import product
 def combine_quantum_states(states, train_size, combine_mode):
-    # combine given quantum states to generate combined quantum states
+    """
+    states: shape = (num_of_states, dim_of_state)
+    train_size: 최종적으로 만들고자 하는 데이터셋 크기
+    combine_mode: "linspace" or "uniform"
+    """
     assert combine_mode in ["linspace", "uniform"], "combine_mode should be 'linspace' or 'uniform'"
+
     num_of_states = len(states)
-    dim_of_states = len(states[0])
 
     if combine_mode == "uniform":
-        # use dirichlet distribution to generate random weights
+        # 전부 uniform 방식 (Dirichlet)으로 생성
         alpha = np.ones(num_of_states)
-        matrix = np.random.dirichlet(alpha, size=train_size)
-        coeff = np.sqrt(matrix)
-        combined_states = np.dot(coeff, states)
-        return combined_states
-    
-    elif combine_mode == "linspace":
-        pass #TODO: linspace방법도 구현한 다음 비교하자. train_size조건이 좀 까다로울듯
+        coefs = np.random.dirichlet(alpha, size=train_size)
+
+    else:  # linspace
+        x = int(train_size**(1/num_of_states)) # linspace 비율 분할 개수
+        combos = np.array(list(product(range(x), repeat=num_of_states)))
+        combos = combos[1:] # 0, 0, 0, ... 0 제외
+        combos = combos / combos.sum(axis=1, keepdims=True)
+        coefs = combos
+        
+        # 만약 linspace로 만든 개수가 train_size보다 적으면, 부족분을 uniform으로 채워서 결합
+        if len(coefs) < train_size:
+            shortfall = train_size - len(coefs)
+            alpha = np.ones(num_of_states)
+            extra_coefs = np.random.dirichlet(alpha, size=shortfall)
+            coefs = np.concatenate([coefs, extra_coefs], axis=0)
+
+        # 혹시 linspace로 만들었을 때 x**num_of_states가 train_size보다 많아도
+        # 여기서 슬라이싱으로 잘라서 정확히 train_size만 맞춰줌
+        coefs = coefs[:train_size]
+
+    # 최종적으로 sqrt(coefficients) 한 뒤 상태들을 섞어서 반환
+    return np.dot(np.sqrt(coefs), states)
 
 
-
-train_dataset = combine_quantum_states(basis_states, train_size, "uniform")
+train_dataset = combine_quantum_states(basis_states, train_size, "linspace")
 train_tensor = torch.tensor(train_dataset, dtype=data_type).to(ml_device)
 assert np.allclose(np.linalg.norm(train_dataset, axis=1), np.ones(train_size)), "combined states are not normalized"
 
