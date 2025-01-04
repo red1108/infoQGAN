@@ -431,3 +431,4 @@ for epoch in range(1, epoch_num+1):
     new_data.to_csv(scalar_save_path, mode='a', header=not file_exists)
     
     visualize_output_simple(magnitudes, correlation_matrix, epoch, writer, image_save_dir)
+    torch.save(generator.params, f'{param_save_dir}/generator_params_epoch{epoch}.pth')

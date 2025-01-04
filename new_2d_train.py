@@ -246,6 +246,7 @@ save_dir = f"./runs/{data_type}_{data_num}_{use_mine}_{current_time}"
 scalar_save_path = os.path.join(save_dir, f"{data_type}_{data_num}_{use_mine}_{current_time}.csv")
 image_save_dir = os.path.join(save_dir, "images")
 numpy_save_dir = os.path.join(save_dir, "numpy")
+param_save_dir = os.path.join(save_dir, "params")
 os.makedirs(image_save_dir, exist_ok=True)
 os.makedirs(numpy_save_dir, exist_ok=True)
 
@@ -396,6 +397,7 @@ for epoch in range(1, epoch_num+1):
 
     np.savetxt(output_file_path, gen_outputs)
     np.savetxt(codes_file_path, gen_codes)
+    torch.save(generator.params, f'{param_save_dir}/generator_params_epoch{epoch}.pth') # QGAN 파라미터 저장
     
     #print("epoch: {}, D_loss: {}, G_loss: {}, MI = {}".format(epoch, D_loss, G_loss, mi))
     #print("좌표값 평균 = ", np.mean(gen_outputs[:,0]), np.mean(gen_outputs[:,1]), "디버그 =", generator.params[0][0][0].item())
