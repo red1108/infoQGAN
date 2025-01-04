@@ -249,6 +249,7 @@ numpy_save_dir = os.path.join(save_dir, "numpy")
 param_save_dir = os.path.join(save_dir, "params")
 os.makedirs(image_save_dir, exist_ok=True)
 os.makedirs(numpy_save_dir, exist_ok=True)
+os.makedirs(param_save_dir, exist_ok=True)
 
 # ======================파이썬 코드를 html 로 만듦=======================
 from pygments import highlight
