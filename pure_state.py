@@ -272,8 +272,8 @@ def visualize_output_simple(magnitudes, correlation_matrix, epoch, writer, image
     plt.close()
 
 current_time = datetime.now().strftime("%b%d_%H_%M_%S")  # "Aug13_14_12_30" 형식
-save_dir = f"./runs/pure_{train_type}_{current_time}"
-scalar_save_path = os.path.join(save_dir, f"pure_{train_type}_{current_time}.csv")
+save_dir = f"./runs/pure_{train_type}_{number_of_basis}_{n_qubits}_{current_time}"
+scalar_save_path = os.path.join(save_dir, f"pure_{train_type}_{number_of_basis}_{n_qubits}_{current_time}.csv")
 image_save_dir = os.path.join(save_dir, "images")
 param_save_dir = os.path.join(save_dir, "params")
 os.makedirs(image_save_dir, exist_ok=True)
@@ -391,9 +391,9 @@ for epoch in range(1, epoch_num+1):
             theta_degrees = np.degrees(np.arccos(np.clip(cos_theta, -1.0, 1.0)))
             theta_degrees = min(theta_degrees, 180 - theta_degrees) # 예각으로 변환
             writer.add_scalar(f'Angle/angle{i}-{j}', theta_degrees, epoch)
-            if i < code_qubits and j < code_qubits:
+            if j < code_qubits:
                 code_angle_sum += theta_degrees
-            elif i >= code_qubits and j >= code_qubits:
+            elif i >= code_qubits:
                 noise_angle_sum += theta_degrees
             else:
                 cross_angle_sum += theta_degrees
