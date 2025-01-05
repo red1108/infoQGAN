@@ -53,3 +53,40 @@ def generate_orthonormal_states(dim, m, mode="complex"):
     # (m, dim) 형태의 NumPy 배열로 변환
     states = np.array(states)
     return states
+
+from itertools import product
+def combine_quantum_states(states, train_size, combine_mode):
+    """
+    states: shape = (num_of_states, dim_of_state)
+    train_size: 최종적으로 만들고자 하는 데이터셋 크기
+    combine_mode: "linspace" or "uniform"
+    """
+    assert combine_mode in ["linspace", "uniform"], "combine_mode should be 'linspace' or 'uniform'"
+
+    num_of_states = len(states)
+
+    if combine_mode == "uniform":
+        # 전부 uniform 방식 (Dirichlet)으로 생성
+        alpha = np.ones(num_of_states)
+        coefs = np.random.dirichlet(alpha, size=train_size)
+
+    else:  # linspace
+        x = int(train_size**(1/num_of_states)) # linspace 비율 분할 개수
+        combos = np.array(list(product(range(x), repeat=num_of_states)))
+        combos = combos[1:] # 0, 0, 0, ... 0 제외
+        combos = combos / combos.sum(axis=1, keepdims=True)
+        coefs = combos
+        
+        # 만약 linspace로 만든 개수가 train_size보다 적으면, 부족분을 uniform으로 채워서 결합
+        if len(coefs) < train_size:
+            shortfall = train_size - len(coefs)
+            alpha = np.ones(num_of_states)
+            extra_coefs = np.random.dirichlet(alpha, size=shortfall)
+            coefs = np.concatenate([coefs, extra_coefs], axis=0)
+
+        # 혹시 linspace로 만들었을 때 x**num_of_states가 train_size보다 많아도
+        # 여기서 슬라이싱으로 잘라서 정확히 train_size만 맞춰줌
+        coefs = coefs[:train_size]
+
+    # 최종적으로 sqrt(coefficients) 한 뒤 상태들을 섞어서 반환
+    return np.dot(np.sqrt(coefs), states)

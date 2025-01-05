@@ -5,6 +5,7 @@ import cv2
 from io import BytesIO
 import os
 from tqdm import tqdm
+import argparse
 
 # 설정
 base_dir = './runs/MNIST0123456789_35_ld16_InfoQGAN_Nov16_14_49_26'
@@ -13,6 +14,21 @@ epochs = range(1, 201)
 frame_duration = 0.5  # 초
 frame_size = (800, 400)  # 이미지 크기
 dpi = 100
+
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser(description='Visualize Generator Parameters')
+    parser.add_argument('--base_dir', type=str, required=True, help='Base directory')
+    parser.add_argument('--epochs', type=int, required=True, help='Epochs to visualize')
+    parser.add_argument('--frame_duration', type=float, default=0.5, help='Frame duration')
+    parser.add_argument('--dpi', type=int, default=100, help='DPI')
+
+    args = parser.parse_args()
+    base_dir = f'./runs/{args.base_dir}'
+    epochs = range(1, args.epochs + 1)
+    output_video = os.path.join(base_dir, 'params.mp4')  # 저장 경로 변경
+    frame_duration = args.frame_duration
+    dpi = args.dpi
+
 
 # 동영상 생성 준비
 fourcc = cv2.VideoWriter_fourcc(*'mp4v')
