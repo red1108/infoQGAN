@@ -297,6 +297,7 @@ for epoch in range(1, epoch_num+1):
     for batch_idx, (batch,) in enumerate(pbar):  # batch unpack
         # train generator
         generator_seed = torch.empty((BATCH_SIZE, n_qubits)).uniform_(-SEED, SEED).to(ml_device) # 실제 범위 = +-SEED * np.pi/2.
+        generator_seed[:, 0] = torch.tensor(np.random.choice(np.linspace(-SEED, SEED, number_of_basis), BATCH_SIZE))
         generator_probs, generator_state, generator_loss = generator_train_step(generator_seed, coeff, use_mine=use_mine)
         G_opt.zero_grad()
         generator_loss.requires_grad_(True)
