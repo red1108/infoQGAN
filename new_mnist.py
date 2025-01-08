@@ -150,11 +150,9 @@ M_scheduler = torch.optim.lr_scheduler.StepLR(M_opt, step_size=30, gamma=gamma)
 
 def generator_postprocessing(generator_output):
     # generator_output: (BATCH_SIZE, img_size**2), 값: [0,1] 범위
-    # 평균 이하인 값만 제곱해서 값을 더 작게 만듦
-    mask = generator_output < generator_output.mean(dim=1, keepdim=True)
-    ratio = generator_output / generator_output.mean(dim=1, keepdim=True)
-    adjusted_output = generator_output.clone()  # 기존 텐서를 복사
-    adjusted_output[mask] = (((ratio) ** 2) * generator_output.mean(dim=1, keepdim=True))[mask]
+    # 평균과의 비율을 제곱해서 잡음제거 / 큰값 증폭 함.
+    ratio = generator_output / (1 / (img_size ** 2))
+    adjusted_output = (ratio ** 2) * (1 / (img_size ** 2))
     
     # max 정규화로 [0,1] 맞추기
     normalized_output = adjusted_output / adjusted_output.max(dim=1, keepdim=True).values
