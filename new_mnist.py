@@ -153,9 +153,10 @@ def generator_postprocessing(generator_output):
     # 평균과의 비율을 제곱해서 잡음제거 / 큰값 증폭 함.
     ratio = generator_output / (1 / (img_size ** 2))
     adjusted_output = (ratio ** 2) * (1 / (img_size ** 2))
+    clipped_output = torch.clamp(adjusted_output, 0, 1)
     
     # max 정규화로 [0,1] 맞추기
-    normalized_output = adjusted_output / adjusted_output.max(dim=1, keepdim=True).values
+    normalized_output = clipped_output / clipped_output.max(dim=1, keepdim=True).values
     
     return normalized_output
 
