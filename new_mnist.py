@@ -237,8 +237,8 @@ def visualize_output_simple(gen_outputs, gen_codes, epoch, writer, image_file_pa
 
 
 current_time = datetime.now().strftime("%b%d_%H_%M_%S")  # "Aug13_14_12_30" 형식
-save_dir = f"./runs/MNIST_{TARGETS_STR}_{train_type}_nq{n_qubits}_nl{n_layers}_{current_time}"
-scalar_save_path = os.path.join(save_dir, f"MNIST_{TARGETS_STR}_{train_type}_nq{n_qubits}_nl{n_layers}_{current_time}.csv")
+save_dir = f"./runs/MNIST_{TARGETS_STR}_{train_type}_nq{n_qubits}_nl{n_layers}_{SEED}_{current_time}"
+scalar_save_path = os.path.join(save_dir, f"MNIST_{TARGETS_STR}_{train_type}_nq{n_qubits}_nl{n_layers}_{SEED}_{current_time}.csv")
 image_save_dir = os.path.join(save_dir, "images")
 param_save_dir = os.path.join(save_dir, "params")
 os.makedirs(image_save_dir, exist_ok=True)
