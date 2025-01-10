@@ -22,7 +22,43 @@ class LinearDiscriminator(nn.Module):
 
         return self.layers(x)
     
+class CNNSimpleDiscriminator(nn.Module):
+    def __init__(self, img_size=28):
+        super(CNNSimpleDiscriminator, self).__init__()
+        self.img_size = img_size
 
+        # stride=1로 변경
+        self.conv_layers = nn.Sequential(
+            # Conv1: 채널 1 -> 16, kernel_size=4, stride=1, padding=1
+            nn.Conv2d(in_channels=1, out_channels=8, kernel_size=4, stride=1, padding=1),
+            nn.LeakyReLU(0.2, inplace=True),
+
+            # Conv2: 채널 16 -> 32, kernel_size=4, stride=1, padding=1
+            nn.Conv2d(in_channels=8, out_channels=16, kernel_size=4, stride=1, padding=1),
+            nn.LeakyReLU(0.2, inplace=True),
+        )
+        
+        self.fc = nn.Sequential(
+            nn.Linear(16 * (img_size - 2) * (img_size - 2), 1),
+            nn.Sigmoid()
+        )
+
+    def forward(self, x):
+        """
+        x: (batch_size, H, W),  예: H=W=img_size
+        """
+        # 채널 차원 추가: (B, 1, H, W)
+        if x.ndim == 3:
+            x = x.unsqueeze(1)
+
+        # 합성곱 통과
+        x = self.conv_layers(x)
+        # (B, out_channels, out_H, out_W) -> (B, out_channels*out_H*out_W)
+        x = x.view(x.size(0), -1)
+
+        # 최종 출력 (B, 1)
+        out = self.fc(x)
+        return out
 
 class QDiscriminator():
     def __init__(self, n_qubits, n_layers, params, dev):

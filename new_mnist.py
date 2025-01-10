@@ -136,7 +136,7 @@ qml_device = qml.device("default.qubit", wires=n_qubits)
 
 generator_initial_params = Variable(torch.tensor(np.random.normal(-np.pi, np.pi, (n_layers, n_qubits, 1))), requires_grad=True)
 generator = QGAN.QGAN2(n_qubits, n_qubits, n_layers, generator_initial_params, qml_device)
-discriminator = Discriminator.LinearDiscriminator(input_dim = img_size**2, hidden_size=100)
+discriminator = Discriminator.CNNDiscriminator(input_dim = img_size**2)
 mine = MINE.LinearMine(code_dim=code_qubits, output_dim=img_size**2, size=50)
 print("n_qubits = {} n_layers = {} 총 파라미터 수 = {}".format(n_qubits, n_layers, generator_initial_params.numel()))
 
@@ -173,6 +173,8 @@ def generator_train_step(generator_seed, use_mine = False):
     generator_output = generator_output.to(torch.float32) # (BATCH_SIZE,  2**output_qubits)
     generator_output = generator_output[:, :img_size**2] # (BATCH_SIZE, img_size**2)
     generator_output = generator_postprocessing(generator_output) # 후처리를 통해 이미지 조정
+    # change shape (BATCH_SIZE, img_size**2) -> (BATCH_SIZE, 1, img_size, img_size)
+    generator_output = generator_output.view(-1, 1, img_size, img_size)
     disc_output = discriminator(generator_output) # 밑에 코드에서 정의됨
     gan_loss = torch.log(1-disc_output).mean()
     
