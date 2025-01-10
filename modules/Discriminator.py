@@ -22,9 +22,9 @@ class LinearDiscriminator(nn.Module):
 
         return self.layers(x)
     
-class CNNSimpleDiscriminator(nn.Module):
+class CNNDiscriminator(nn.Module):
     def __init__(self, img_size=28):
-        super(CNNSimpleDiscriminator, self).__init__()
+        super(CNNDiscriminator, self).__init__()
         self.img_size = img_size
 
         # stride=1로 변경
