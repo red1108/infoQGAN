@@ -148,17 +148,28 @@ G_scheduler = torch.optim.lr_scheduler.StepLR(G_opt, step_size=30, gamma=gamma)
 D_scheduler = torch.optim.lr_scheduler.StepLR(D_opt, step_size=30, gamma=gamma)
 M_scheduler = torch.optim.lr_scheduler.StepLR(M_opt, step_size=30, gamma=gamma)
 
+
+import torchvision.transforms as T
 def generator_postprocessing(generator_output):
     # generator_output: (BATCH_SIZE, img_size**2), 값: [0,1] 범위
-    # 평균과의 비율을 제곱해서 잡음제거 / 큰값 증폭 함.
+    # 평균 이하인 값만 제곱해서 값을 더 작게 만듦
     ratio = generator_output / (1 / (img_size ** 2))
-    adjusted_output = (ratio ** 3) * (1 / (img_size ** 2))
+    adjusted_output = (ratio ** 2) * (1 / (img_size ** 2))
     clipped_output = torch.clamp(adjusted_output, 0, 1)
     
-    # max 정규화로 [0,1] 맞추기
-    normalized_output = clipped_output / clipped_output.max(dim=1, keepdim=True).values
+    # gaussian blur
+    B = clipped_output.shape[0]
+    x = clipped_output.view(B, 1, img_size, img_size)
+
+    blur = T.GaussianBlur(kernel_size=3, sigma=0.5)
+    blurred = blur(x)  # (B,1,H,W)
     
-    return normalized_output
+    # 3) 최댓값 기준 [0,1] 스케일링
+    max_vals = blurred.view(B, -1).max(dim=1, keepdim=True)[0]  # (B, 1)
+    normalized = blurred / (max_vals.view(B,1,1,1) + 1e-8)
+
+    # 결과를 (B, img_size**2) 형태로 다시 되돌려 반환
+    return normalized.view(B, -1)
 
 
 # 학습에 사용할 train_step과 disc_cost_fn 정의 
