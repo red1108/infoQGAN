@@ -94,8 +94,7 @@ def combine_quantum_states(states, train_size, combine_mode):
 
 
 def odd_intervals_seed(batch_size, n_qubits, n, seed):
-    # 간격 길이
-    d = 2*seed / (2*n - 1)
-    # k=0,1,...,n-1 중에서 고르고, 각 k에 대응하는 홀수번째 구간에서 uniform 샘플
-    k = torch.randint(n, (batch_size, n_qubits))            # 어떤 홀수 구간(0-based 2k)을 고를지
-    return -seed + 2*k*d + d*torch.rand_like(k, dtype=torch.float)
+    d = 2*seed / (2*n - 1)                # 각 구간의 길이
+    k = torch.randint(n, (batch_size,))   # batch마다 공통으로 쓸 k 값 한 개씩
+    k = k[:, None].expand(-1, n_qubits)   # n_qubits만큼 브로드캐스트
+    return -seed + 2*k*d + d*torch.rand(batch_size, n_qubits)
