@@ -2,6 +2,7 @@ import nbformat
 from nbconvert import HTMLExporter
 import os
 import numpy as np
+import torch
 
 def convert_ipynb_to_html(ipynb_file_path, output_html_path):
     # ipynb 파일 로드
@@ -90,3 +91,11 @@ def combine_quantum_states(states, train_size, combine_mode):
 
     # 최종적으로 sqrt(coefficients) 한 뒤 상태들을 섞어서 반환
     return np.dot(np.sqrt(coefs), states)
+
+
+def odd_intervals_seed(batch_size, n_qubits, n, seed):
+    # 간격 길이
+    d = 2*seed / (2*n - 1)
+    # k=0,1,...,n-1 중에서 고르고, 각 k에 대응하는 홀수번째 구간에서 uniform 샘플
+    k = torch.randint(n, (batch_size, n_qubits))            # 어떤 홀수 구간(0-based 2k)을 고를지
+    return -seed + 2*k*d + d*torch.rand_like(k, dtype=torch.float)

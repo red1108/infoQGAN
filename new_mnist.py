@@ -24,7 +24,7 @@ from torch.utils.tensorboard import SummaryWriter
 
 # Custom Modules (QGAN2, Discriminator, MINE)
 from modules import QGAN, Discriminator, MINE
-from modules.utils import convert_ipynb_to_html  # For saving HTML files
+from modules.utils import convert_ipynb_to_html, odd_intervals_seed  # For saving HTML files
 import importlib  # For reloading modules
 importlib.reload(QGAN)
 importlib.reload(Discriminator)
@@ -296,6 +296,7 @@ def categorical_distribution(S, E, T, size): # S~E를 T개로 내분하는 categ
         categories = np.linspace(S, E, T)
     return torch.tensor(np.random.choice(categories, size))
 
+
 from torch.utils.data import DataLoader, TensorDataset
 
 train_tensor = torch.tensor(train_data, dtype=torch.float32)
@@ -321,7 +322,7 @@ for epoch in range(1, epoch_num+1):
 
     for batch_idx, (batch,) in enumerate(pbar):  # batch unpack
         # # train generator
-        generator_seed = torch.empty((BATCH_SIZE, n_qubits)).uniform_(-SEED, SEED)
+        generator_seed = odd_intervals_seed(BATCH_SIZE, n_qubits, len(TARGETS), SEED)
         generator_output, generator_loss = generator_train_step(generator_seed, use_mine=use_mine)
         G_opt.zero_grad()
         generator_loss.requires_grad_(True)
