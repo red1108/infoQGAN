@@ -57,6 +57,7 @@ code_qubits = 3
 train_size = 1000
 ARGS = None
 seed_indep = False
+seed_sep = 1
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Training parameters")
@@ -74,7 +75,8 @@ if __name__ == "__main__":
     parser.add_argument("--gamma", type=float, default=0.8, help="Learning rate scheduler gamma (step = 30 epochs)")
     parser.add_argument("--code", type=int, default=3, help="Number of code qubits")
     parser.add_argument("--train_size", type=int, default=2000, help="Train dataset size")
-    parser.add_argument("--indep", type=bool, default=False, help="Train data seed independeny")
+    parser.add_argument("--seed_indep", type=bool, default=False, help="QGAN input seed independeny")
+    parser.add_argument("--seed_sep", type=int, default = 1, help="QGAN input seed component number")
 
     args = parser.parse_args()
     ARGS = args
@@ -96,7 +98,8 @@ if __name__ == "__main__":
     gamma = args.gamma
     train_size = args.train_size
     code_qubits = args.code
-    seed_indep = args.indep
+    seed_indep = args.seed_indep
+    seed_sep = args.seed_sep
 
     print(f"Use Mine: {use_mine}")
     print(f"n_qubits = {n_qubits}, n_layers = {n_layers}, total params = {n_qubits * n_layers}")
@@ -114,7 +117,10 @@ if __name__ == "__main__":
     print(f"Gamma: {gamma}")
     print(f"Code Qubits: {code_qubits}")
     print(f"Number of Images per Class: {train_size}")
-    print(f"SEED indep = {seed_indep}")
+    print(f"SEED indep = {seed_indep}, seed_sep = {seed_sep}")
+    if seed_sep != len(TARGETS):
+        print(f"warning: seed_sep {seed_sep} != len(Targets) {len(TARGETS)}")
+
 
 img_size = int(2 ** (n_qubits/2))
 
@@ -326,7 +332,7 @@ for epoch in range(1, epoch_num+1):
 
     for batch_idx, (batch,) in enumerate(pbar):  # batch unpack
         # # train generator
-        generator_seed = odd_intervals_seed(BATCH_SIZE, n_qubits, len(TARGETS), SEED, independent = seed_indep)
+        generator_seed = odd_intervals_seed(BATCH_SIZE, n_qubits, seed_sep, SEED, independent = seed_indep)
         generator_output, generator_loss = generator_train_step(generator_seed, use_mine=use_mine)
         G_opt.zero_grad()
         generator_loss.requires_grad_(True)
