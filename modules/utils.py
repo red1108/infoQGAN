@@ -93,8 +93,11 @@ def combine_quantum_states(states, train_size, combine_mode):
     return np.dot(np.sqrt(coefs), states)
 
 
-def odd_intervals_seed(batch_size, n_qubits, n, seed):
+def odd_intervals_seed(batch_size, n_qubits, n, seed, independent = True):
     d = 2*seed / (2*n - 1)                # 각 구간의 길이
-    k = torch.randint(n, (batch_size,))   # batch마다 공통으로 쓸 k 값 한 개씩
-    k = k[:, None].expand(-1, n_qubits)   # n_qubits만큼 브로드캐스트
+    if independent:
+        k = torch.randint(n, (batch_size, n_qubits))
+    else:
+        k = torch.randint(n, (batch_size,))   # batch마다 공통으로 쓸 k 값 한 개씩
+        k = k[:, None].expand(-1, n_qubits)   # n_qubits만큼 브로드캐스트
     return -seed + 2*k*d + d*torch.rand(batch_size, n_qubits)
