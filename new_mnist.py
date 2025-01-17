@@ -56,6 +56,7 @@ COEFF = 0.05
 code_qubits = 3
 train_size = 1000
 ARGS = None
+seed_indep = False
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Training parameters")
@@ -73,6 +74,7 @@ if __name__ == "__main__":
     parser.add_argument("--gamma", type=float, default=0.8, help="Learning rate scheduler gamma (step = 30 epochs)")
     parser.add_argument("--code", type=int, default=3, help="Number of code qubits")
     parser.add_argument("--train_size", type=int, default=2000, help="Train dataset size")
+    parser.add_argument("--indep", type=bool, default=False, help="Train data seed independeny")
 
     args = parser.parse_args()
     ARGS = args
@@ -94,6 +96,7 @@ if __name__ == "__main__":
     gamma = args.gamma
     train_size = args.train_size
     code_qubits = args.code
+    seed_indep = args.indep
 
     print(f"Use Mine: {use_mine}")
     print(f"n_qubits = {n_qubits}, n_layers = {n_layers}, total params = {n_qubits * n_layers}")
@@ -111,6 +114,7 @@ if __name__ == "__main__":
     print(f"Gamma: {gamma}")
     print(f"Code Qubits: {code_qubits}")
     print(f"Number of Images per Class: {train_size}")
+    print(f"SEED indep = {seed_indep}")
 
 img_size = int(2 ** (n_qubits/2))
 
@@ -322,7 +326,7 @@ for epoch in range(1, epoch_num+1):
 
     for batch_idx, (batch,) in enumerate(pbar):  # batch unpack
         # # train generator
-        generator_seed = odd_intervals_seed(BATCH_SIZE, n_qubits, len(TARGETS), SEED)
+        generator_seed = odd_intervals_seed(BATCH_SIZE, n_qubits, len(TARGETS), SEED, independent = seed_indep)
         generator_output, generator_loss = generator_train_step(generator_seed, use_mine=use_mine)
         G_opt.zero_grad()
         generator_loss.requires_grad_(True)
