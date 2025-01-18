@@ -335,7 +335,8 @@ for epoch in range(1, epoch_num+1):
 
     for batch_idx, (batch,) in enumerate(pbar):  # batch unpack
         # # train generator
-        generator_seed = odd_intervals_seed(BATCH_SIZE, n_qubits, seed_sep, SEED, independent = seed_indep)
+        dirichlet_dist = torch.distributions.dirichlet.Dirichlet(torch.ones(n_qubits, device=ml_device))
+        generator_seed = dirichlet_dist.sample((BATCH_SIZE,)) * SEED
         generator_output, generator_loss = generator_train_step(generator_seed, use_mine=use_mine)
         G_opt.zero_grad()
         generator_loss.requires_grad_(True)
