@@ -54,6 +54,7 @@ epoch_num = 300
 gamma = 0.8
 COEFF = 0.05
 code_qubits = 3
+additional_qubits = 1
 train_size = 1000
 ARGS = None
 seed_indep = False
@@ -74,6 +75,7 @@ if __name__ == "__main__":
     parser.add_argument("--epochs", type=int, required=True, help="Number of epochs")
     parser.add_argument("--gamma", type=float, default=0.8, help="Learning rate scheduler gamma (step = 30 epochs)")
     parser.add_argument("--code", type=int, default=3, help="Number of code qubits")
+    parser.add_argument("--additional", type=int, default=1, help="additional seed dimension")
     parser.add_argument("--train_size", type=int, default=2000, help="Train dataset size")
     parser.add_argument("--seed_indep", type=bool, default=False, help="QGAN input seed independeny")
     parser.add_argument("--seed_sep", type=int, default = 1, help="QGAN input seed component number")
@@ -98,6 +100,7 @@ if __name__ == "__main__":
     gamma = args.gamma
     train_size = args.train_size
     code_qubits = args.code
+    additional_qubits = args.additional
     seed_indep = args.seed_indep
     seed_sep = args.seed_sep
 
@@ -115,14 +118,14 @@ if __name__ == "__main__":
     print(f"Seed Range: {-SEED} ~ {SEED}")
     print(f"Epochs: {epoch_num}")
     print(f"Gamma: {gamma}")
-    print(f"Code Qubits: {code_qubits}")
+    print(f"Code Qubits: {code_qubits} Additional Qubits: {additional_qubits}")
     print(f"Number of Images per Class: {train_size}")
     print(f"SEED indep = {seed_indep}, seed_sep = {seed_sep}")
     if seed_sep != len(TARGETS):
         print(f"warning: seed_sep {seed_sep} != len(Targets) {len(TARGETS)}")
 
 
-img_size = int(2 ** (n_qubits/2))
+img_size = int(2 ** ((n_qubits-additional_qubits)/2))
 
 # 데이터 변환 정의
 transform = transforms.Compose([
@@ -144,10 +147,10 @@ ml_device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 print("학습에 사용할 device =", ml_device)
 qml_device = qml.device("default.qubit", wires=n_qubits)
 
-generator_initial_params = Variable(torch.tensor(np.random.normal(-np.pi, np.pi, (n_layers, n_qubits, 2))), requires_grad=True)
-generator = QGAN.QGAN5(n_qubits, n_qubits, n_layers, generator_initial_params, qml_device)
+generator_initial_params = Variable(torch.tensor(np.random.normal(-np.pi, np.pi, (n_layers, n_qubits-additional_qubits, 2))), requires_grad=True)
+generator = QGAN.QGAN6(n_qubits, n_qubits-additional_qubits, n_layers, generator_initial_params, additional_qubits, qml_device)
 discriminator = Discriminator.CNNDiscriminator(img_size = img_size)
-mine = MINE.LinearMine(code_dim=code_qubits, output_dim=img_size**2, size=50)
+mine = MINE.LinearMine(code_dim=code_qubits, output_dim=img_size**2, size=100)
 print("n_qubits = {} n_layers = {} 총 파라미터 수 = {}".format(n_qubits, n_layers, generator_initial_params.numel()))
 
 G_opt = torch.optim.Adam([generator.params], lr=G_lr)
