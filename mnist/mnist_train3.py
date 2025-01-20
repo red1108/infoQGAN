@@ -316,7 +316,7 @@ def visualize_output_simple(gen_outputs, gen_codes, epoch, writer, image_file_pa
 from scipy.linalg import sqrtm
 
 def calculate_frechet_distance(gen_outputs, val_dataset):
-    # gen_outputs: (_, 2**output_qubits), val_dataset: (_, 2**output_qubits)
+    # gen_outputs: (_, A), val_dataset: (_, A)
     # 평균과 공분산 계산
     mu1, sigma1 = gen_outputs.mean(axis=0), np.cov(gen_outputs, rowvar=False)
     mu2, sigma2 = val_dataset.mean(axis=0), np.cov(val_dataset, rowvar=False)

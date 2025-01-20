@@ -273,7 +273,6 @@ class QGAN6:
 
     def circuit(self, generator_input):
         # output dimension: 2**output_qubits
-
         self.init_circuit(generator_input)
 
         for i in range(self.n_layers):

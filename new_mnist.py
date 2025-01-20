@@ -377,9 +377,9 @@ for epoch in range(1, epoch_num+1):
     D_scheduler.step()
     M_scheduler.step()
     
-    gen_outputs = np.concatenate(gen_outputs, axis=0) # (train_num, 2**output_qubits)
+    gen_outputs = np.concatenate(gen_outputs, axis=0) # (train_num, img_size**2)
     gen_codes = np.concatenate(gen_codes, axis=0) # (train_num, code_qubits)
-    raw_outputs = np.concatenate(raw_outputs, axis=0) # (train_num, 2**output_qubits)
+    raw_outputs = np.concatenate(raw_outputs, axis=0) # (train_num, img_size**2)
 
     D_loss, G_loss, mi = D_loss_sum/batch_num, G_loss_sum/batch_num, mi_sum/batch_num
 

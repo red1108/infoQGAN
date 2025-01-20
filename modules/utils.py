@@ -105,7 +105,8 @@ def odd_intervals_seed(batch_size, n_qubits, n, seed, independent = True):
 from scipy.linalg import sqrtm
 
 def calculate_frechet_distance(gen_outputs, dataset):
-    # gen_outputs: (_, 2**output_qubits), val_dataset: (_, 2**output_qubits)
+    # gen_outputs: (_, A), dataset: (_, A)
+    print(gen_outputs.shape, dataset.shape)
     # 평균과 공분산 계산
     mu1, sigma1 = gen_outputs.mean(axis=0), np.cov(gen_outputs, rowvar=False)
     mu2, sigma2 = dataset.mean(axis=0), np.cov(dataset, rowvar=False)
