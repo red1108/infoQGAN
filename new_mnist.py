@@ -396,7 +396,7 @@ for epoch in range(1, epoch_num+1):
     writer.add_scalar('Metrics/inner_product', inner_product, epoch)
 
     # calculate frechet distance
-    frechet_distance = calculate_frechet_distance(gen_outputs, train_data)
+    frechet_distance = calculate_frechet_distance(gen_outputs, train_data.reshape(-1, img_size**2))
     writer.add_scalar('Metrics/FD', frechet_distance, epoch)
 
     # 스칼라 값 CSV로 덮어쓰기 저장
