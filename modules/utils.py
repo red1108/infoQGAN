@@ -101,3 +101,20 @@ def odd_intervals_seed(batch_size, n_qubits, n, seed, independent = True):
         k = torch.randint(n, (batch_size,))   # batch마다 공통으로 쓸 k 값 한 개씩
         k = k[:, None].expand(-1, n_qubits)   # n_qubits만큼 브로드캐스트
     return -seed + 2*k*d + d*torch.rand(batch_size, n_qubits)
+
+from scipy.linalg import sqrtm
+
+def calculate_frechet_distance(gen_outputs, dataset):
+    # gen_outputs: (_, 2**output_qubits), val_dataset: (_, 2**output_qubits)
+    # 평균과 공분산 계산
+    mu1, sigma1 = gen_outputs.mean(axis=0), np.cov(gen_outputs, rowvar=False)
+    mu2, sigma2 = dataset.mean(axis=0), np.cov(dataset, rowvar=False)
+
+    # Frechet Distance 계산
+    diff = mu1 - mu2
+    covmean = sqrtm(sigma1.dot(sigma2))
+    if np.iscomplexobj(covmean):  # 실수 부분만 사용
+        covmean = covmean.real
+
+    frechet_distance = diff.dot(diff) + np.trace(sigma1 + sigma2 - 2 * covmean)
+    return frechet_distance

@@ -24,7 +24,7 @@ from torch.utils.tensorboard import SummaryWriter
 
 # Custom Modules (QGAN2, Discriminator, MINE)
 from modules import QGAN, Discriminator, MINE
-from modules.utils import convert_ipynb_to_html, odd_intervals_seed  # For saving HTML files
+from modules.utils import calculate_frechet_distance, convert_ipynb_to_html, odd_intervals_seed  # For saving HTML files
 import importlib  # For reloading modules
 importlib.reload(QGAN)
 importlib.reload(Discriminator)
@@ -195,8 +195,8 @@ def generator_train_step(generator_seed, use_mine = False):
     generator_output = generator.forward(generator_seed) # 출력을 뽑아낸다 (BATCH_SIZE, 2**output_qubits)
 
     generator_output = generator_output.to(torch.float32) # (BATCH_SIZE,  2**output_qubits)
-    generator_output = generator_output[:, :img_size**2] # (BATCH_SIZE, img_size**2)
-    generator_output = generator_postprocessing(generator_output) # 후처리를 통해 이미지 조정
+    generator_raw = generator_output[:, :img_size**2] # (BATCH_SIZE, img_size**2)
+    generator_output = generator_postprocessing(generator_raw) # 후처리를 통해 이미지 조정
     # change shape (BATCH_SIZE, img_size**2) -> (BATCH_SIZE, 1, img_size, img_size)
     disc_output = discriminator(generator_output.view(-1, 1, img_size, img_size)) # 밑에 코드에서 정의됨
     gan_loss = torch.log(1-disc_output).mean()
@@ -208,7 +208,7 @@ def generator_train_step(generator_seed, use_mine = False):
         mi = torch.mean(pred_xy) - torch.log(torch.mean(torch.exp(pred_x_y)))
         gan_loss -= COEFF * mi
 
-    return generator_output, gan_loss
+    return generator_raw, generator_output, gan_loss
 
 disc_loss_fn = nn.BCELoss()
 def disc_cost_fn(real_input, fake_input):
@@ -331,13 +331,14 @@ for epoch in range(1, epoch_num+1):
 
     # 그림 그릴때 필요하다
     gen_outputs = [] # (데이터수, 2) 생성한 모든 점의 좌표들
+    raw_outputs = [] # (데이터수, 2) 생성한 모든 점의 좌표들 (후처리 전)
     gen_codes = [] # (데이터수, 2) 점 찍는데 들어간 code들
 
     for batch_idx, (batch,) in enumerate(pbar):  # batch unpack
         # # train generator
         dirichlet_dist = torch.distributions.dirichlet.Dirichlet(torch.ones(n_qubits, device=ml_device))
         generator_seed = dirichlet_dist.sample((BATCH_SIZE,)) * SEED
-        generator_output, generator_loss = generator_train_step(generator_seed, use_mine=use_mine)
+        generator_raw, generator_output, generator_loss = generator_train_step(generator_seed, use_mine=use_mine)
         G_opt.zero_grad()
         generator_loss.requires_grad_(True)
         generator_loss.backward()
@@ -368,6 +369,7 @@ for epoch in range(1, epoch_num+1):
 
         gen_outputs.append(fake_input.detach().numpy())
         gen_codes.append(code_input.detach().numpy())
+        raw_outputs.append(generator_raw.detach().numpy())
 
         pbar.set_postfix({'G_loss': G_loss_sum/(batch_idx+1), 'D_loss': D_loss_sum/(batch_idx+1), 'MI': mi_sum/(batch_idx+1)})
 
@@ -377,12 +379,25 @@ for epoch in range(1, epoch_num+1):
     
     gen_outputs = np.concatenate(gen_outputs, axis=0) # (train_num, 2**output_qubits)
     gen_codes = np.concatenate(gen_codes, axis=0) # (train_num, code_qubits)
+    raw_outputs = np.concatenate(raw_outputs, axis=0) # (train_num, 2**output_qubits)
 
     D_loss, G_loss, mi = D_loss_sum/batch_num, G_loss_sum/batch_num, mi_sum/batch_num
 
     writer.add_scalar('Loss/d_loss', D_loss, epoch)
     writer.add_scalar('Loss/g_loss', G_loss, epoch)
     writer.add_scalar('Metrics/mi', mi, epoch)
+
+    # calculate average inner product value for all raw_outputs
+    inner_product_sum = 0.0
+    for i in range(raw_outputs.shape[0]):
+        for j in range(i+1, raw_outputs.shape[0]):
+            inner_product_sum += np.vdot(raw_outputs[i], raw_outputs[j])
+    inner_product = inner_product_sum / (raw_outputs.shape[0] * (raw_outputs.shape[0]-1) / 2)
+    writer.add_scalar('Metrics/inner_product', inner_product, epoch)
+
+    # calculate frechet distance
+    frechet_distance = calculate_frechet_distance(gen_outputs, train_data)
+    writer.add_scalar('Metrics/FD', frechet_distance, epoch)
 
     # 스칼라 값 CSV로 덮어쓰기 저장
     file_exists = os.path.isfile(scalar_save_path)
