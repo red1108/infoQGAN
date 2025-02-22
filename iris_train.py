@@ -247,25 +247,30 @@ def categorical_distribution(S, E, T, size): # S~E를 T개로 내분하는 categ
         categories = np.linspace(S, E, T)
     return torch.tensor(np.random.choice(categories, size))
 
-def combined_tsne(origin_df, generated_data_df):
+def combined_tsne(origin_df, generated_data_df, title):
     origin_df = origin_df.copy()
-    # 두 DataFrame을 합침 (Species 컬럼 포함)
+    # origin_df에 기존 Species 값을 추가
     origin_df["Species"] = raw_data_df["Species"]
+    # 두 DataFrame을 합침 (Species 컬럼 포함)
     combined_df = pd.concat([origin_df, generated_data_df], axis=0, ignore_index=True)
+    
     tsne_result = TSNE(n_components=2, random_state=42).fit_transform(
         combined_df.drop("Species", axis=1).values
     )
     combined_df["Component 1"] = tsne_result[:, 0]
     combined_df["Component 2"] = tsne_result[:, 1]
-    # 시각화
+    
+    # 시각화: Species에 따라 색상과 마커 모양 모두 다르게 지정
     fig = plt.figure(figsize=(6, 5))
     sns.scatterplot(
-        x="Component 1", y="Component 2", hue="Species",
+        x="Component 1", y="Component 2",
+        hue="Species", style="Species",
         data=combined_df, alpha=0.7
     )
-    plt.title("t-SNE Visualization of Origin&Generated")
+    plt.title(title)
     plt.legend(title="Species")
     return fig
+
 
 
 def visualize_output_augment(log_gen_outputs, log_gen_codes, epoch, writer, image_file_path):
@@ -289,7 +294,7 @@ def visualize_output_augment(log_gen_outputs, log_gen_codes, epoch, writer, imag
     mapping = {float(cat): f'Class {i+1}' for i, cat in enumerate(categories)}
     gen_codes_categories = np.array(log_gen_codes[:, 0]).flatten()
     output_df['Species'] = pd.Series(gen_codes_categories).map(mapping)
-    fig3 = combined_tsne(train_data_df, output_df)
+    fig3 = combined_tsne(train_data_df, output_df, f"t-SNE of Origin & Generated (Epoch {epoch})")
 
     # TensorBoard에 기록
     writer.add_figure(f'hisplot', fig1, epoch)
@@ -306,7 +311,7 @@ def visualize_output_augment(log_gen_outputs, log_gen_codes, epoch, writer, imag
     plt.close(fig3)
 
 current_time = datetime.now().strftime("%b%d_%H_%M_%S")  # "Aug13_14_12" 형식
-trial_name = f"IRIS_{train_type}_nq{n_qubits}_nl{n_layers}_{current_time}"
+trial_name = f"IRIS_{train_type}_sd{SEED}_nq{n_qubits}_nl{n_layers}_{current_time}"
 save_dir = f"./runs/{trial_name}"
 scalar_save_path = os.path.join(save_dir, f"{trial_name}.csv")
 image_save_dir = os.path.join(save_dir, "images")
@@ -370,7 +375,7 @@ for epoch in range(1, epoch_num+1):
         # train generator
         #TODO: 불연속 데이터로 code input 주자.
         generator_seed = torch.empty((BATCH_SIZE, n_qubits)).uniform_(-SEED, SEED).to(ml_device) # 실제 범위 = +-SEED * np.pi/2.
-        generator_seed[:, 0] = categorical_distribution(-SEED, SEED, 3, BATCH_SIZE)
+        generator_seed[:, 0] = categorical_distribution(-SEED, SEED, data_legend_num, BATCH_SIZE)
         generator_output, generator_loss = generator_train_step(generator_seed, use_mine=use_mine)
         G_opt.zero_grad()
         generator_loss.requires_grad_(True)
