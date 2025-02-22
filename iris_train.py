@@ -37,7 +37,7 @@ import ndtest # 2D 분포 검정에 사용
 from datetime import datetime
 import os
 import time
-from modules.utils import convert_ipynb_to_html # 현재 html파일 저장을 위해 사용
+from modules.utils import categorical_distribution, convert_ipynb_to_html, map_category_with_tolerance # 현재 html파일 저장을 위해 사용
 import argparse
 import json
 from scipy.stats import ks_2samp
@@ -240,13 +240,6 @@ def disc_cost_fn(real_input, fake_input, smoothing=False):
     
     return loss
 
-def categorical_distribution(S, E, T, size): # S~E를 T개로 내분하는 categorical distribution.
-    if T == 1:
-        categories = [(S+E)/2]
-    else:
-        categories = np.linspace(S, E, T)
-    return torch.tensor(np.random.choice(categories, size))
-
 def combined_tsne(origin_df, generated_data_df, title):
     origin_df = origin_df.copy()
     # origin_df에 기존 Species 값을 추가
@@ -261,7 +254,7 @@ def combined_tsne(origin_df, generated_data_df, title):
     combined_df["Component 2"] = tsne_result[:, 1]
     
     # 시각화: Species에 따라 색상과 마커 모양 모두 다르게 지정
-    fig = plt.figure(figsize=(6, 5))
+    fig = plt.figure(figsize=(12, 10))
     sns.scatterplot(
         x="Component 1", y="Component 2",
         hue="Species", style="Species",
@@ -293,7 +286,7 @@ def visualize_output_augment(log_gen_outputs, log_gen_codes, epoch, writer, imag
     categories = np.linspace(-SEED, SEED, data_legend_num)
     mapping = {float(cat): f'Class {i+1}' for i, cat in enumerate(categories)}
     gen_codes_categories = np.array(log_gen_codes[:, 0]).flatten()
-    output_df['Species'] = pd.Series(gen_codes_categories).map(mapping)
+    output_df['Species'] = map_category_with_tolerance(gen_codes_categories, categories, mapping)
     fig3 = combined_tsne(train_data_df, output_df, f"t-SNE of Origin & Generated (Epoch {epoch})")
 
     # TensorBoard에 기록
@@ -416,7 +409,7 @@ for epoch in range(1, epoch_num+1):
     
     gen_outputs = np.concatenate(gen_outputs, axis=0) # (train_num, n_features)
 
-    gen_codes = np.concatenate(gen_codes, axis=0) # (train_num, 2)
+    gen_codes = np.concatenate(gen_codes, axis=0) # (train_num, code_qubits)
 
     D_loss, G_loss, mi = D_loss_sum/batch_num, G_loss_sum/batch_num, mi_sum/batch_num
 

@@ -2,6 +2,7 @@ import nbformat
 from nbconvert import HTMLExporter
 import os
 import numpy as np
+import pandas as pd
 import torch
 
 def convert_ipynb_to_html(ipynb_file_path, output_html_path):
@@ -118,3 +119,24 @@ def calculate_frechet_distance(gen_outputs, dataset):
 
     frechet_distance = diff.dot(diff) + np.trace(sigma1 + sigma2 - 2 * covmean)
     return frechet_distance
+
+def categorical_distribution(S, E, T, size): # S~E를 T개로 내분하는 categorical distribution.
+    if T == 1:
+        categories = [(S+E)/2]
+    else:
+        categories = np.linspace(S, E, T)
+    return torch.tensor(np.random.choice(categories, size))
+
+
+def map_category_with_tolerance(x, categories, mapping, tol=1e-7):
+    def find_category(val):
+        # Find the index of the category that is closest to the value
+        diffs = np.abs(categories - val)
+        idx = np.argmin(diffs)
+        # Check if the difference is within the tolerance (optional)
+        if diffs[idx] < tol:
+            return mapping[float(categories[idx])]
+        else:
+            # Even if not within tolerance, return the closest category mapping
+            return mapping[float(categories[idx])]
+    return pd.Series(x).apply(find_category)
