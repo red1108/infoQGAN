@@ -261,7 +261,7 @@ def combined_tsne(origin_df, generated_data_df, title):
         subset = combined_df[marker_map == marker]
         ax.scatter(
             subset["Component 1"], subset["Component 2"],
-            label=f'{marker} Group',  # 그룹명 표시
+            hue="Species",
             alpha=0.7, marker=marker
         )
     plt.title(title)
