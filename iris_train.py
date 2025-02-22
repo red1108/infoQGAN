@@ -8,7 +8,7 @@ import numpy as np
 import pandas as pd
 import matplotlib
 import matplotlib.pyplot as plt
-# matplotlib.use('Agg')  # For saving figures
+matplotlib.use('Agg')  # For saving figures
 import seaborn as sns
 from sklearn.manifold import TSNE
 from IPython.display import clear_output
