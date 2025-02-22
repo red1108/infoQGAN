@@ -253,17 +253,20 @@ def combined_tsne(origin_df, generated_data_df, title):
     combined_df["Component 1"] = tsne_result[:, 0]
     combined_df["Component 2"] = tsne_result[:, 1]
     
-    # 시각화: Species에 따라 색상과 마커 모양 모두 다르게 지정
-    fig = plt.figure(figsize=(12, 10))
-    sns.scatterplot(
-        x="Component 1", y="Component 2",
-        hue="Species", style="Species",
-        data=combined_df, alpha=0.7
-    )
+    # Species 값에 따라 마커 지정
+    marker_map = combined_df["Species"].apply(lambda x: 'o' if x.startswith("Iris-") else '+')
+    # 시각화
+    fig, ax = plt.subplots(figsize=(9, 7))
+    for marker in marker_map.unique():
+        subset = combined_df[marker_map == marker]
+        ax.scatter(
+            subset["Component 1"], subset["Component 2"],
+            label=f'{marker} Group',  # 그룹명 표시
+            alpha=0.7, marker=marker
+        )
     plt.title(title)
     plt.legend(title="Species")
     return fig
-
 
 
 def visualize_output_augment(log_gen_outputs, log_gen_codes, epoch, writer, image_file_path):
