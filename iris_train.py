@@ -254,7 +254,7 @@ def combined_tsne(origin_df, generated_data_df, title):
     combined_df["Component 2"] = tsne_result[:, 1]
     
     # Species 값에 따라 마커 지정: Iris-로 시작하면 'o', Class-로 시작하면 '+' 사용
-    markers = {s: ("o" if s.startswith("Iris") else "+" if s.startswith("Class") else "o")
+    markers = {s: ("o" if s.startswith("Iris") else "^" if s.startswith("Class") else "o")
                for s in combined_df["Species"].unique()}
     
     # 시각화: Species에 따라 색상과 마커 모양 모두 다르게 지정
