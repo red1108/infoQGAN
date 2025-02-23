@@ -128,7 +128,7 @@ if __name__ == "__main__":
     if use_mine:
         print(f"InfoQGAN coefficient: {COEFF}")
     
-    print(f"Seed Range: {-SEED} ~ {SEED}, Epochs: {epoch_num}")
+    print(f"Seed Range: {0} ~ {2*SEED}, Epochs: {epoch_num}")
     print(f"Embedding Range: {range_l} ~ {range_r}")
 
 raw_data_df = None
@@ -287,7 +287,7 @@ def visualize_output_augment(log_gen_outputs, log_gen_codes, epoch, writer, imag
 
     # 세 번째 플롯: t-SNE 시각화
     output_df = pd.DataFrame(log_gen_outputs, columns=train_data_df.columns)
-    categories = np.linspace(-SEED, SEED, data_legend_num)
+    categories = np.linspace(0, 2*SEED, data_legend_num)
     mapping = {float(cat): f'Class {i+1}' for i, cat in enumerate(categories)}
     gen_codes_categories = np.array(log_gen_codes[:, 0]).flatten()
     output_df['Species'] = map_category_with_tolerance(gen_codes_categories, categories, mapping)
@@ -371,8 +371,8 @@ for epoch in range(1, epoch_num+1):
     for batch_idx, (batch,) in enumerate(pbar):  # batch unpacking
         # train generator
         #TODO: 불연속 데이터로 code input 주자.
-        generator_seed = torch.empty((BATCH_SIZE, n_qubits)).uniform_(-SEED, SEED).to(ml_device) # 실제 범위 = +-SEED * np.pi/2.
-        generator_seed[:, 0] = categorical_distribution(-SEED, SEED, data_legend_num, BATCH_SIZE)
+        generator_seed = torch.empty((BATCH_SIZE, n_qubits)).uniform_(0, 2*SEED).to(ml_device) # 실제 범위 = +-SEED * np.pi/2.
+        generator_seed[:, 0] = categorical_distribution(0, 2*SEED, data_legend_num, BATCH_SIZE)
         generator_output, generator_loss = generator_train_step(generator_seed, use_mine=use_mine)
         G_opt.zero_grad()
         generator_loss.requires_grad_(True)
