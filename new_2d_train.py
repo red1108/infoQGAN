@@ -59,7 +59,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Training parameters")
     parser.add_argument("--model_type", choices=['InfoQGAN', 'QGAN'], required=True, help="Model type to use: InfoQGAN or QGAN")
     parser.add_argument("--data_num", type=int, default=1000, help="Number of data points")
-    parser.add_argument("--data_type", choices=['biased_diamond', 'biased_circle'], required=True, help="Data type to use")
+    parser.add_argument("--data_type", choices=['biased_diamond', 'biased_circle', '2box'], required=True, help="Data type to use")
 
     parser.add_argument("--n_qubits", type=int, default=5, help="Number of qubits")
     parser.add_argument("--code_qubits", type=int, default=2, help="Number of code qubits")
@@ -241,9 +241,10 @@ def visualize_output_simple(log_gen_outputs, log_gen_codes, epoch, writer, image
     plt.close(fig2)
     plt.close(fig3)
 
-current_time = datetime.now().strftime("%b%d_%H_%M_%S")  # "Aug13_14-12" 형식
-save_dir = f"./runs/{data_type}_{data_num}_{use_mine}_{current_time}"
-scalar_save_path = os.path.join(save_dir, f"{data_type}_{data_num}_{use_mine}_{current_time}.csv")
+current_time = datetime.now().strftime("%b%d_%H_%M_%S")  # "Aug13_14_12" 형식
+base_name = f'{use_mine}_np{n_qubits}_nl{n_layers}_{data_type}_{use_mine}_{current_time}'
+save_dir = f"./runs/{base_name}"
+scalar_save_path = os.path.join(save_dir, f"{base_name}.csv")
 image_save_dir = os.path.join(save_dir, "images")
 numpy_save_dir = os.path.join(save_dir, "numpy")
 param_save_dir = os.path.join(save_dir, "params")

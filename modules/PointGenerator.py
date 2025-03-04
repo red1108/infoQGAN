@@ -16,6 +16,20 @@ class PointGenerator:
         yy = np.random.uniform(0.3, 0.7, self.data_num) + 0.012 * np.random.randn(self.data_num)  # y 좌표 계산
         return self._combine_and_shuffle(xx, yy)
 
+    
+    def generate_2box(self):
+        # 중심이 (0.4, 0.4), 한 변 크기 0.4인 정사각형, 중심이 (0.6, 0.6), 한 변 크기 0.4인 정사각형이 겹친 영역
+        # 이 영역 내에서 uniform하게 데이터 생성
+        # [0, 0.1] * [0, 0.1] 범위에서 랜덤하게 점 추출하고, 해당 영역 안에 있으면 점 추가, self.data_num 쌓일 때 까지 반복
+        ret = []
+        while len(ret) < self.data_num:
+            x = np.random.uniform(0, 1)
+            y = np.random.uniform(0, 1)
+            if (abs(x-0.4)<=0.2 and abs(y-0.4)<=0.2) or (abs(x-0.6)<=0.2 and abs(y-0.6)<=0.2):
+                ret.append((x, y))
+        ret = np.array(ret)
+        return ret
+    
     def generate_biased_box(self):
         xx = np.random.uniform(0.5, 0.9, self.data_num) # x 좌표 계산
         yy = np.random.uniform(0.5, 0.9, self.data_num)  # y 좌표 계산
