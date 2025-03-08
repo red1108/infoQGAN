@@ -61,7 +61,7 @@ if __name__ == "__main__":
     parser.add_argument("--model_type", choices=['InfoQGAN', 'QGAN'], required=True, help="Model type to use: InfoQGAN or QGAN")
     parser.add_argument("--data_num", type=int, default=1000, help="Number of data points")
     parser.add_argument("--data_type", choices=['biased_diamond', 'biased_circle', '2box', 'bigdiamond'], required=True, help="Data type to use")
-    parser.add_argument("--entangling", choices=['CNOT', 'ZZ'], default='CNOT', help="Entangling gate to use")
+    parser.add_argument("--entangling", choices=['CNOT', 'CZ'], default='CNOT', help="Entangling gate to use")
 
     parser.add_argument("--n_qubits", type=int, default=5, help="Number of qubits")
     parser.add_argument("--code_qubits", type=int, default=2, help="Number of code qubits")
