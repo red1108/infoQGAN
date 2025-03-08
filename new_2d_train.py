@@ -36,6 +36,7 @@ import json
 
 train_type = "InfoQGAN"
 use_mine = True if train_type == "InfoQGAN" else False
+entangling = "CNOT"
 
 data_num = 1000
 data_type = "biased_diamond"
@@ -59,7 +60,8 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Training parameters")
     parser.add_argument("--model_type", choices=['InfoQGAN', 'QGAN'], required=True, help="Model type to use: InfoQGAN or QGAN")
     parser.add_argument("--data_num", type=int, default=1000, help="Number of data points")
-    parser.add_argument("--data_type", choices=['biased_diamond', 'biased_circle', '2box'], required=True, help="Data type to use")
+    parser.add_argument("--data_type", choices=['biased_diamond', 'biased_circle', '2box', 'bigdiamond'], required=True, help="Data type to use")
+    parser.add_argument("--entangling", choices=['CNOT', 'ZZ'], default='CNOT', help="Entangling gate to use")
 
     parser.add_argument("--n_qubits", type=int, default=5, help="Number of qubits")
     parser.add_argument("--code_qubits", type=int, default=2, help="Number of code qubits")
@@ -81,6 +83,7 @@ if __name__ == "__main__":
     use_mine = (train_type == 'InfoQGAN')
     data_type = args.data_type
     data_num = args.data_num
+    entangling = args.entangling
 
     n_qubits = args.n_qubits
     code_qubits = args.code_qubits
@@ -130,8 +133,8 @@ importlib.reload(Discriminator)  # 모듈 갱신
 importlib.reload(MINE)  # 모듈 갱신
 
 # 생성자 파라미터 초기화 및 모듈 불러오기
-generator_initial_params = Variable(torch.tensor(np.random.normal(-np.pi/2 , np.pi/2, (n_layers, n_qubits, 1))), requires_grad=True)
-generator = QGAN.QGAN2(n_qubits, output_qubits, n_layers, generator_initial_params, dev)
+generator_initial_params = Variable(torch.tensor(np.random.normal(-np.pi , np.pi, (n_layers, n_qubits, 1))), requires_grad=True)
+generator = QGAN.QGAN2(n_qubits, output_qubits, n_layers, generator_initial_params, dev, entangling=entangling)
 
 # 판별자, MINE 초기화
 discriminator = Discriminator.LinearDiscriminator(input_dim = output_qubits)

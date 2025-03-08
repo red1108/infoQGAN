@@ -55,7 +55,7 @@ class QGenerator:
         return [self.params]
     
 class QGAN2:
-    def __init__(self, n_qubits, output_qubits, n_layers, params, dev):
+    def __init__(self, n_qubits, output_qubits, n_layers, params, dev, entangling="CNOT"):
         self.n_qubits = n_qubits
         self.n_layers = n_layers
         self.params = params
@@ -67,6 +67,8 @@ class QGAN2:
         
         self.dev = dev  # pennylane device
         self.generator_circuit_qnode = qml.QNode(self.circuit, self.dev, interface="torch")
+        self.entangling = entangling
+        assert entangling in ["CNOT", "CZ"], "entangling should be 'CNOT' or 'CZ'"
         
     def init_circuit(self, generator_input):
         for i in range(self.n_qubits):
@@ -78,7 +80,10 @@ class QGAN2:
         
         if not last:
             for i in range(self.n_qubits):
-                qml.CNOT(wires=[i, (i+1)%self.n_qubits])
+                if self.entangling == "CNOT":
+                    qml.CNOT(wires=[i, (i+1)%self.n_qubits])
+                elif self.entangling == "CZ":
+                    qml.CZ(wires=[i, (i+1)%self.n_qubits])
 
     def circuit(self, generator_input):
         # output dimension: 2**output_qubits
