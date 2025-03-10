@@ -5,6 +5,7 @@ test.ipynb
 data/MNIST/raw
 past_runs
 정리/
+.env
 
 # cache
 __pycache__/

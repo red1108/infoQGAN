@@ -4,6 +4,7 @@ import os
 import numpy as np
 import pandas as pd
 import torch
+import json
 
 def convert_ipynb_to_html(ipynb_file_path, output_html_path):
     # ipynb 파일 로드
@@ -140,3 +141,14 @@ def map_category_with_tolerance(x, categories, mapping, tol=1e-7):
             # Even if not within tolerance, return the closest category mapping
             return mapping[float(categories[idx])]
     return pd.Series(x).apply(find_category)
+
+
+
+def read_args(args_file_path, *keys):
+    # @param args_file_path: args.txt 파일 경로.
+    # args.txt 파일 읽기 및 파라미터 추출
+    with open(args_file_path, 'r') as file:
+        args = json.load(file)
+    assert all(k in args for k in keys), f"Invalid key(s) provided. Available keys: {list(args.keys())}"
+
+    return tuple(args[k] for k in keys)

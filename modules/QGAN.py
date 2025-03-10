@@ -102,6 +102,54 @@ class QGAN2:
     
     def parameters(self):
         return [self.params]
+    
+class QGAN2withSimpleForward(QGAN2):
+    def __init__(self, n_qubits, output_qubits, n_layers, params, dev, entangling="CNOT"):
+        # Call parent constructor
+        super().__init__(n_qubits, output_qubits, n_layers, params, dev, entangling)
+
+
+    def circuit(self, generator_input):
+        # output dimension: 2**output_qubits
+
+        self.init_circuit(generator_input)
+
+        for i in range(self.n_layers):
+            self.single_layer(self.params[i], last=(i==self.n_layers-1))
+
+        return [qml.expval(qml.PauliZ(wires=i)) for i in range(self.output_qubits)]
+
+    def forward(self, generator_input):
+        generator_output = [self.generator_circuit_qnode(single_in) for single_in in generator_input]  # (BATCH_SIZE, output_qubits)
+        generator_output = torch.stack(generator_output)  # (BATCH_SIZE, output_qubits)
+        generator_output = (1 - generator_output) / 2 # (BATCH_SIZE, output_qubits) |1> 확률값을 구함
+        return generator_output
+    
+class QGAN2withBitFlipNoise(QGAN2):
+    def __init__(self, n_qubits, output_qubits, n_layers, params, dev, noise_prob, entangling="CNOT"):
+        # Call parent constructor
+        super().__init__(n_qubits, output_qubits, n_layers, params, dev, entangling)
+        self.noise_prob = noise_prob
+
+    def init_circuit(self, generator_input):
+        # For each qubit, apply RY followed by BitFlip noise
+        for i in range(self.n_qubits):
+            qml.RY(generator_input[i] * np.pi / 2, wires=i)
+            qml.BitFlip(self.noise_prob, wires=i)
+
+    def single_layer(self, params, last=False):
+        # For each qubit, apply RY followed by BitFlip noise
+        for i in range(self.n_qubits):
+            qml.RY(params[i][0], wires=i)
+            qml.BitFlip(self.noise_prob, wires=i)
+            
+        if not last:
+            # Apply the entangling layer
+            for i in range(self.n_qubits):
+                if self.entangling == "CNOT":
+                    qml.CNOT(wires=[i, (i+1) % self.n_qubits])
+                elif self.entangling == "CZ":
+                    qml.CZ(wires=[i, (i+1) % self.n_qubits])
 
 class QGAN3:
     # 여러 깊이로 seed를 임베딩할수 있게 함.
