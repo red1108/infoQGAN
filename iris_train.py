@@ -298,9 +298,10 @@ def visualize_output_augment(log_gen_outputs, log_gen_codes, epoch, writer, imag
     writer.add_figure(f'heatmap', fig2, epoch)
     writer.add_figure(f'tsnes', fig3, epoch)
     # fig1, fig2, fig3 를 image file로 저장
-    fig1.savefig(f'{image_file_path}/hist_epoch_{epoch}.png')
-    fig2.savefig(f'{image_file_path}/corr_epoch_{epoch}.png')
-    fig3.savefig(f'{image_file_path}/tsne_epoch_{epoch}.png')
+    if epoch % 5 == 0:
+        fig1.savefig(f'{image_file_path}/hist_epoch_{epoch}.png')
+        fig2.savefig(f'{image_file_path}/corr_epoch_{epoch}.png')
+        fig3.savefig(f'{image_file_path}/tsne_epoch_{epoch}.png')
 
     # 메모리 관리를 위해 plt를 닫음
     plt.close(fig1)
@@ -309,7 +310,7 @@ def visualize_output_augment(log_gen_outputs, log_gen_codes, epoch, writer, imag
 
 current_time = datetime.now().strftime("%b%d_%H_%M_%S")  # "Aug13_14_12" 형식
 trial_name = f"IRIS_{train_type}_sd{SEED}_nq{n_qubits}_nl{n_layers}_{current_time}"
-save_dir = f"./runs/{trial_name}"
+save_dir = f"./iris_runs/{trial_name}"
 scalar_save_path = os.path.join(save_dir, f"{trial_name}.csv")
 image_save_dir = os.path.join(save_dir, "images")
 numpy_save_dir = os.path.join(save_dir, "numpy")
