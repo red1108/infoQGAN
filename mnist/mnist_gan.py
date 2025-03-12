@@ -145,7 +145,7 @@ device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 print("학습에 사용할 device =",device)
 
 # 5. 생성자, 판별자, MINE, optimizer 초기화
-generator = Generator.LinearGenerator(input_dim=SEED_DIM, output_dim=latent_dim, hidden_size=4)
+generator = Generator.LinearGeneratorDirichlet(input_dim=SEED_DIM, output_dim=latent_dim, hidden_size=4)
 discriminator = Discriminator.LinearDiscriminator(input_dim = latent_dim, hidden_size=100)
 mine = MINE.LinearMine(code_dim=code_dim, output_dim=latent_dim, size=100)
 
