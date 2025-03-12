@@ -127,14 +127,14 @@ print(device)
 dev = qml.device("default.qubit", wires=n_qubits)
 
 import importlib
-from modules import QGAN, Discriminator, MINE  # 초기 import
-importlib.reload(QGAN)  # 모듈 갱신
+from modules import Discriminator, MINE, QGenerator  # 초기 import
+importlib.reload(QGenerator)  # 모듈 갱신
 importlib.reload(Discriminator)  # 모듈 갱신
 importlib.reload(MINE)  # 모듈 갱신
 
 # 생성자 파라미터 초기화 및 모듈 불러오기
 generator_initial_params = Variable(torch.tensor(np.random.normal(-np.pi , np.pi, (n_layers, n_qubits, 1))), requires_grad=True)
-generator = QGAN.QGAN2(n_qubits, output_qubits, n_layers, generator_initial_params, dev, entangling=entangling)
+generator = QGenerator.QGAN2(n_qubits, output_qubits, n_layers, generator_initial_params, dev, entangling=entangling)
 
 # 판별자, MINE 초기화
 discriminator = Discriminator.LinearDiscriminator(input_dim = output_qubits)

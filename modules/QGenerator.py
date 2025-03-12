@@ -103,6 +103,10 @@ class QGAN2:
     def parameters(self):
         return [self.params]
     
+    def state_dict(self):
+        return self.params
+
+    
 class QGAN2withSimpleForward(QGAN2):
     def __init__(self, n_qubits, output_qubits, n_layers, params, dev, entangling="CNOT"):
         # Call parent constructor

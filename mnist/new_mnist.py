@@ -23,10 +23,10 @@ from torchvision import datasets, transforms
 from torch.utils.tensorboard import SummaryWriter
 
 # Custom Modules (QGAN2, Discriminator, MINE)
-from modules import QGAN, Discriminator, MINE
+from modules import Discriminator, MINE, QGenerator
 from modules.utils import calculate_frechet_distance, convert_ipynb_to_html, odd_intervals_seed  # For saving HTML files
 import importlib  # For reloading modules
-importlib.reload(QGAN)
+importlib.reload(QGenerator)
 importlib.reload(Discriminator)
 importlib.reload(MINE)
 
@@ -148,7 +148,7 @@ print("학습에 사용할 device =", ml_device)
 qml_device = qml.device("default.qubit", wires=n_qubits)
 
 generator_initial_params = Variable(torch.tensor(np.random.normal(-np.pi, np.pi, (n_layers, n_qubits-additional_qubits, 2))), requires_grad=True)
-generator = QGAN.QGAN6(n_qubits, n_qubits-additional_qubits, n_layers, generator_initial_params, additional_qubits, qml_device)
+generator = QGenerator.QGAN6(n_qubits, n_qubits-additional_qubits, n_layers, generator_initial_params, additional_qubits, qml_device)
 discriminator = Discriminator.CNNDiscriminator(img_size = img_size)
 mine = MINE.LinearMine(code_dim=code_qubits, output_dim=img_size**2, size=100)
 print("n_qubits = {} n_layers = {} 총 파라미터 수 = {}".format(n_qubits, n_layers, generator_initial_params.numel()))

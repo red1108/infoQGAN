@@ -25,8 +25,8 @@ from torch.utils.tensorboard import SummaryWriter
 from torch.utils.data import DataLoader, TensorDataset
 
 import importlib
-from modules import QGAN, Discriminator, MINE  # 초기 import
-importlib.reload(QGAN)  # 모듈 갱신
+from modules import Discriminator, MINE, QGenerator  # 초기 import
+importlib.reload(QGenerator)  # 모듈 갱신
 importlib.reload(Discriminator)  # 모듈 갱신
 importlib.reload(MINE)  # 모듈 갱신
 
@@ -168,13 +168,13 @@ print("고전 머신러닝 device =", ml_device, "양자 회로 backend =", quan
 
 # 생성자 파라미터 초기화 및 모듈 불러오기
 generator_initial_params = Variable(torch.tensor(np.random.normal(-np.pi , np.pi, (n_layers, n_qubits, 1))), requires_grad=True)
-generator = QGAN.QGAN2(n_qubits, output_qubits, n_layers, generator_initial_params, quantum_device)
+generator = QGenerator.QGAN2(n_qubits, output_qubits, n_layers, generator_initial_params, quantum_device)
 
 # 판별자, MINE 초기화
 discriminator = Discriminator.LinearDiscriminator(input_dim = output_qubits, hidden_size=128)
 mine = MINE.LinearMine(code_dim=code_qubits, output_dim=output_qubits)
 
-G_opt = torch.optim.Adam([generator.params], lr=G_lr)
+G_opt = torch.optim.Adam(generator.parameters(), lr=G_lr)
 D_opt = torch.optim.Adam(discriminator.parameters(), lr=D_lr)
 M_opt = torch.optim.Adam(mine.parameters(), lr=M_lr)
 
@@ -475,4 +475,4 @@ for epoch in range(1, epoch_num+1):
 
     np.savetxt(output_file_path, gen_outputs)
     np.savetxt(codes_file_path, gen_codes)
-    torch.save(generator.params, f'{param_save_dir}/generator_params_epoch{epoch}.pth') # QGAN 파라미터 저장
+    torch.save(generator.state_dict(), f'{param_save_dir}/generator_params_epoch{epoch}.pth') # QGAN 파라미터 저장

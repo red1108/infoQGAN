@@ -3,6 +3,8 @@ import torch
 
 from modules.Autoencoder import AbsoluteValueLayer, NormalizeLayer
 
+from abc import ABC, abstractmethod
+
 # Generator
 class LinearGenerator(nn.Module):
     def __init__(self, input_dim, output_dim, hidden_size=50):

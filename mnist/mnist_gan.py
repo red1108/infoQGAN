@@ -21,11 +21,11 @@ import torch.nn as nn
 from torch.autograd import Variable
 from torch.utils.tensorboard import SummaryWriter
 
-from modules import Autoencoder, GAN, Discriminator, MINE
+from modules import Autoencoder, Discriminator, MINE, Generator
 from modules.utils import convert_ipynb_to_html  # For saving HTML files
 import importlib  # For reloading modules
 importlib.reload(Autoencoder)
-importlib.reload(GAN)
+importlib.reload(Generator)
 importlib.reload(Discriminator)
 importlib.reload(MINE)
 
@@ -145,7 +145,7 @@ device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 print("학습에 사용할 device =",device)
 
 # 5. 생성자, 판별자, MINE, optimizer 초기화
-generator = GAN.LinearGenerator(input_dim=SEED_DIM, output_dim=latent_dim, hidden_size=4)
+generator = Generator.LinearGenerator(input_dim=SEED_DIM, output_dim=latent_dim, hidden_size=4)
 discriminator = Discriminator.LinearDiscriminator(input_dim = latent_dim, hidden_size=100)
 mine = MINE.LinearMine(code_dim=code_dim, output_dim=latent_dim, size=100)
 

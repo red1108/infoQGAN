@@ -23,11 +23,11 @@ from torch.utils.tensorboard import SummaryWriter
 
 
 # Custom Modules (Autoencoder, QGAN2, Discriminator, MINE)
-from modules import Autoencoder, QGAN, Discriminator, MINE
+from modules import Autoencoder, Discriminator, MINE, QGenerator
 from modules.utils import convert_ipynb_to_html  # For saving HTML files
 import importlib  # For reloading modules
 importlib.reload(Autoencoder)
-importlib.reload(QGAN)
+importlib.reload(QGenerator)
 importlib.reload(Discriminator)
 importlib.reload(MINE)
 
@@ -197,7 +197,7 @@ dev = qml.device("default.qubit", wires=n_qubits)
 
 # 5. 생성자, 판별자, MINE, optimizer 초기화
 generator_initial_params = Variable(torch.tensor(np.random.normal(-np.pi/3, np.pi/3, (n_layers, n_qubits, 1))), requires_grad=True)
-generator = QGAN.QGAN2(n_qubits, output_qubits, n_layers, generator_initial_params, dev)
+generator = QGenerator.QGAN2(n_qubits, output_qubits, n_layers, generator_initial_params, dev)
 discriminator = Discriminator.LinearDiscriminator(input_dim = latent_dim, hidden_size=100) # 50 --> 25 변경
 mine = MINE.LinearMine(code_dim=code_qubits, output_dim=latent_dim, size=100) # 50 --> 100 변경
 print("n_qubits = {} n_layers = {} 총 파라미터 수 = {}".format(n_qubits, n_layers, generator_initial_params.numel()))

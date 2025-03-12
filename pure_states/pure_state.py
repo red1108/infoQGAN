@@ -25,8 +25,8 @@ from torch.utils.tensorboard import SummaryWriter
 from torch.utils.data import DataLoader, TensorDataset
 
 import importlib
-from modules import QGAN, Discriminator, MINE  # 초기 import
-importlib.reload(QGAN)  # 모듈 갱신
+from modules import Discriminator, MINE, QGenerator  # 초기 import
+importlib.reload(QGenerator)  # 모듈 갱신
 importlib.reload(Discriminator)  # 모듈 갱신
 importlib.reload(MINE)  # 모듈 갱신
 
@@ -141,7 +141,7 @@ if data_type == torch.float32:
 elif data_type == torch.complex128:
     generator_initial_params = Variable(torch.tensor(np.random.normal(-np.pi, np.pi, (G_layers, n_qubits, 3))), requires_grad=True)
 generator_mode = "RY" if data_type == torch.float32 else "RXYZ"
-generator = QGAN.QGenerator(n_qubits, n_qubits, G_layers, generator_initial_params, quantum_device, mode=generator_mode) # 상태를 얻어야 Discriminator에 넣음.
+generator = QGenerator.QGenerator(n_qubits, n_qubits, G_layers, generator_initial_params, quantum_device, mode=generator_mode) # 상태를 얻어야 Discriminator에 넣음.
 
 if data_type == torch.float32:
     discriminator = Discriminator.LinearDiscriminator(input_dim = 2**n_qubits, hidden_size=100)
