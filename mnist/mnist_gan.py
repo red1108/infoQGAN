@@ -154,8 +154,9 @@ def count_parameters(model):
     return sum(p.numel() for p in model.parameters() if p.requires_grad)
 
 # Print total number of trainable parameters
-total_params = count_parameters(generator)
-print(f"Total trainable parameters in LinearGenerator: {total_params}")
+print(f"Total trainable parameters in Generator: {count_parameters(generator)}")
+print(f"Total trainable parameters in Discriminator: {count_parameters(discriminator)}")
+print(f"Total trainable parameters in MINE: {count_parameters(mine)}")
 
 G_opt = torch.optim.Adam(generator.parameters(), lr=G_lr)
 D_opt = torch.optim.Adam(discriminator.parameters(), lr=D_lr)
