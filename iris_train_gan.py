@@ -25,8 +25,8 @@ from torch.utils.tensorboard import SummaryWriter
 from torch.utils.data import DataLoader, TensorDataset
 
 import importlib
-from modules import Discriminator, MINE, QGenerator  # 초기 import
-importlib.reload(QGenerator)  # 모듈 갱신
+from modules import Discriminator, MINE, Generator  # 초기 import
+importlib.reload(Generator)  # 모듈 갱신
 importlib.reload(Discriminator)  # 모듈 갱신
 importlib.reload(MINE)  # 모듈 갱신
 
@@ -48,20 +48,16 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import accuracy_score
 from sklearn.metrics import confusion_matrix
 
-train_type = "InfoQGAN"
-use_mine = True if train_type == "InfoQGAN" else False
+train_type = "InfoGAN"
+use_mine = True if train_type == "InfoGAN" else False
 data_type = "IRIS"
 
-n_qubits = 4
 n_features = 4
-code_qubits = 1
-
-noise_qubits = n_qubits - code_qubits
-output_qubits = n_features
-n_layers = 20
 
 BATCH_SIZE = 16
 SEED = 1
+SEED_DIM = 5
+code_dim = 2
 epoch_num = 300
 
 G_lr = 0.003
@@ -69,67 +65,55 @@ D_lr = 0.0003
 M_lr = 0.003
 coeff = 0.05
 
-range_l = 0.15
-range_r = 0.85
 data_legend_num = 3
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Training parameters")
-    parser.add_argument("--model_type", choices=['InfoQGAN', 'QGAN'], required=True, help="Model type to use: InfoQGAN or QGAN")
+    parser.add_argument("--model_type", choices=['InfoGAN', 'GAN'], required=True, help="Model type to use: InfoQGAN or QGAN")
     parser.add_argument("--data_type", choices=['IRIS', 'WINE'], required=True, help="Data type to use")
 
-    parser.add_argument("--n_qubits", type=int, default=4, help="Number of qubits")
-    parser.add_argument("--code_qubits", type=int, default=1, help="Number of code qubits")
-    parser.add_argument("--n_layers", type=int, default=20, help="Number of layers for QGAN")
+    parser.add_argument("--code_dim", type=int, default=1, help="Dimension of latent code")
 
     parser.add_argument("--G_lr", type=float, default=0.003, help="Learning rate for generator")
     parser.add_argument("--M_lr", type=float, default=0.003, help="Learning rate for mine")
     parser.add_argument("--D_lr", type=float, default=0.0003, help="Learning rate for discriminator")
     parser.add_argument("--coeff", type=float, default=0.05, help="Coefficient value used for InfoQGAN (not used for QGAN)")
 
-    parser.add_argument("--seed", type=float, default=1.0, help="Seed value range")
+    parser.add_argument("--seed", type=float, default=1.0, help="Generator seed value range")
+    parser.add_argument("--seed_dim", type=int, default=5, help="Generator seed dimension")
+
     parser.add_argument("--epochs", type=int, default=300, help="Number of epochs")
-    parser.add_argument("--range_l", type=float, default=0.15, help="Embedding range left")
-    parser.add_argument("--range_r", type=float, default=0.85, help="Embedding range right")
 
     
     args = parser.parse_args()
     ARGS = args
     
     train_type = args.model_type
-    use_mine = (train_type == 'InfoQGAN')
+    use_mine = (train_type == 'InfoGAN')
     data_type = args.data_type
 
-    n_qubits = args.n_qubits
-    code_qubits = args.code_qubits
-    noise_qubits = n_qubits - code_qubits
+    code_dim = args.code_dim
 
-    n_layers = args.n_layers
     G_lr = args.G_lr
     M_lr = args.M_lr
     D_lr = args.D_lr
     COEFF = args.coeff
     SEED = args.seed
+    SEED_DIM = args.seed_dim
     epoch_num = args.epochs
-    range_l = args.range_l
-    range_r = args.range_r
 
 
     print(f"Use Mine: {use_mine}")
     print(f"Data Type: {data_type}")
 
-    print(f"Number of Qubits: {n_qubits}")
-    print(f"Number of Code Qubits: {code_qubits}")
-    print(f"Number of Layers: {n_layers}, total parameters: {n_layers*n_qubits}")
+    print(f"seed dim = {SEED_DIM}, code dim = {code_dim}")
+    print(f"Seed Range: {-SEED} ~ {SEED}, Epochs: {epoch_num}")
 
     print(f"Generator Learning Rate: {G_lr}")
     print(f"Mine Learning Rate: {M_lr}")
     print(f"Discriminator Learning Rate: {D_lr}")
     if use_mine:
-        print(f"InfoQGAN coefficient: {COEFF}")
-    
-    print(f"Seed Range: {-SEED} ~ {SEED}, Epochs: {epoch_num}")
-    print(f"Embedding Range: {range_l} ~ {range_r}")
+        print(f"InfoGAN coefficient: {COEFF}")
 
 raw_data_df = None
 
@@ -139,7 +123,7 @@ if data_type == "IRIS":
     csv_file = os.path.join(path, "iris.csv")
     raw_data_df = pd.read_csv(csv_file)
     n_features = 4
-    output_qubits = 4
+
 elif data_type == "WINE":
     path = kagglehub.dataset_download("yasserh/wine-quality-dataset")
     print("Path to dataset files:", path)
@@ -152,66 +136,28 @@ print(raw_data_df.shape, raw_data_df.columns)
 train_data_df = raw_data_df[numeric_cols]
 train_data_df = train_data_df.drop(columns=['Id'])
 train_data_np = train_data_df.to_numpy()
-
-# 학습 데이터셋을 [range_l, range_r] 범위로 rescale
-
-train_data_np = train_data_df.to_numpy()
-min_val = train_data_np.min(axis=0)
-max_val = train_data_np.max(axis=0)
-
-# range_l ~ range_r 범위로 rescale
-rescaled = range_l + (train_data_np - min_val) / (max_val - min_val) * (range_r - range_l)
-train_tensor = torch.tensor(rescaled, dtype=torch.float32) # 학습에 사용할 텐서
+train_tensor = torch.tensor(train_data_np, dtype=torch.float32) # 학습에 사용할 텐서
 
 # setting torch device
 ml_device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-quantum_device = qml.device("default.qubit", wires=n_qubits)
-print("고전 머신러닝 device =", ml_device, "양자 회로 backend =", quantum_device)
+print("고전 머신러닝 device =", ml_device)
 
 # 생성자 파라미터 초기화 및 모듈 불러오기
-generator_initial_params = Variable(torch.tensor(np.random.normal(-np.pi , np.pi, (n_layers, n_qubits, 1))), requires_grad=True)
-generator = QGenerator.QGAN2(n_qubits, output_qubits, n_layers, generator_initial_params, quantum_device)
+generator = Generator.LinearGenerator(input_dim=SEED_DIM, output_dim=n_features, hidden_size=4)
 
 # 판별자, MINE 초기화
-discriminator = Discriminator.LinearDiscriminator(input_dim = output_qubits, hidden_size=128)
-mine = MINE.LinearMine(code_dim=code_qubits, output_dim=output_qubits)
+discriminator = Discriminator.LinearDiscriminator(input_dim = n_features, hidden_size=128)
+mine = MINE.LinearMine(code_dim=code_dim, output_dim=n_features)
 
 G_opt = torch.optim.Adam(generator.parameters(), lr=G_lr)
 D_opt = torch.optim.Adam(discriminator.parameters(), lr=D_lr)
 M_opt = torch.optim.Adam(mine.parameters(), lr=M_lr)
 
-
-def bitwise_sums(arr):
-    n = len(arr).bit_length() - 1  # 비트 길이를 계산하여 반복 횟수를 정함
-    sums = torch.zeros(n, dtype=arr.dtype, device=arr.device)  # 결과를 저장할 텐서
-    for bit in range(n):
-        # 조건에 맞는 인덱스 선택을 위해 i-th 비트를 검사
-        mask = (torch.arange(len(arr), device=arr.device) >> bit) & 1
-        sums[bit] = arr[mask.bool()].sum()  # 조건에 맞는 원소들의 합산
-    return sums
-
-def output_postprocessing(arr):
-    # arr: (BATCH_SIZE, output_qubits**2)
-    # return: (BATCH_SIZE, output_qubits)
-    ret = torch.stack([bitwise_sums(arr[i]) for i in range(len(arr))])
-    return ret
-
-def output_rescale(ret):
-    # 원래 학습 데이터의 각 속성별 최소/최대값 추출
-    train_mins = train_data_df.min()
-    train_maxs = train_data_df.max()
-
-    train_mins_tensor = torch.tensor(train_mins.values, dtype=ret.dtype, device=ret.device)
-    train_maxs_tensor = torch.tensor(train_maxs.values, dtype=ret.dtype, device=ret.device)
-                                     
-    return train_mins_tensor + (ret - range_l) * (train_maxs_tensor - train_mins_tensor) / (range_r-range_l)
-
 def generator_train_step(generator_input, use_mine = False):
-    code_input = generator_input[:, :code_qubits] # 입력중에서 code만 뽑는다. (BATCH_SIZE, code_qubits)
+    code_input = generator_input[:, :code_dim] # 입력중에서 code만 뽑는다. (BATCH_SIZE, code_dim)
 
-    generator_output = generator.forward(generator_input) # 출력을 뽑아낸다 (BATCH_SIZE, 2**output_qubits)
-    generator_output = output_postprocessing(generator_output) # (BATCH_SIZE, output_qubits)
-    generator_output = generator_output.to(torch.float32) # (BATCH_SIZE, output_qubits)
+    generator_output = generator.forward(generator_input) # 출력을 뽑아낸다 (BATCH_SIZE, n_features)
+    generator_output = generator_output.to(torch.float32) # (BATCH_SIZE, n_features)
     
     disc_output = discriminator(generator_output) # 평균과 표준편차 맞춘 뒤 판별자에 넣음
     gan_loss = torch.log(1-disc_output).mean()
@@ -311,7 +257,7 @@ def visualize_output_augment(log_gen_outputs, log_gen_codes, epoch, writer, imag
     plt.close(fig3)
 
 current_time = datetime.now().strftime("%b%d_%H_%M_%S")  # "Aug13_14_12" 형식
-trial_name = f"IRIS_{train_type}_sd{SEED}_nq{n_qubits}_nl{n_layers}_{current_time}"
+trial_name = f"IRIS_{train_type}_sd{SEED}_code{code_dim}_{current_time}"
 save_dir = f"./iris_runs/{trial_name}"
 scalar_save_path = os.path.join(save_dir, f"{trial_name}.csv")
 image_save_dir = os.path.join(save_dir, "images")
@@ -369,11 +315,12 @@ for epoch in range(1, epoch_num+1):
 
     # 그림 그릴때 필요하다
     gen_outputs = [] # (데이터수, n_features) QGAN으로 생성한 데이터
-    gen_codes = [] # (데이터수, code_qubits) 점 찍는데 들어간 code들
+    gen_codes = [] # (데이터수, code_dim) 점 찍는데 들어간 code들
 
     for batch_idx, (batch,) in enumerate(pbar):  # batch unpacking
         # train generator
-        generator_seed = torch.empty((BATCH_SIZE, n_qubits)).uniform_(-SEED, SEED).to(ml_device) # 실제 범위 = +-SEED * np.pi/2.
+        #TODO: 불연속 데이터로 code input 주자.
+        generator_seed = torch.empty((BATCH_SIZE, SEED_DIM)).uniform_(-SEED, SEED).to(ml_device) # 실제 범위 = +-SEED * np.pi/2.
         generator_seed[:, 0] = categorical_distribution(-SEED, SEED, data_legend_num, BATCH_SIZE)
         generator_output, generator_loss = generator_train_step(generator_seed, use_mine=use_mine)
         G_opt.zero_grad()
@@ -390,7 +337,7 @@ for epoch in range(1, epoch_num+1):
         D_opt.step()
 
         # train mine
-        code_input = generator_seed[:, :code_qubits] # (BATCH_SIZE, code_qubits) 코드만 추출
+        code_input = generator_seed[:, :code_dim] # (BATCH_SIZE, code_dim) 코드만 추출
         pred_xy = mine(code_input, fake_input)
         code_input_shuffle = code_input[torch.randperm(BATCH_SIZE)]
         pred_x_y = mine(code_input_shuffle, fake_input)
@@ -404,7 +351,7 @@ for epoch in range(1, epoch_num+1):
         G_loss_sum += generator_loss.item()
         mi_sum -= mi.item() # (-1)곱해져 있어서 빼야함.
 
-        gen_outputs.append(output_rescale(fake_input).numpy()) # 실제 데이터 범위로 늘린 후 저장
+        gen_outputs.append(fake_input.numpy()) # 실제 데이터 범위로 늘린 후 저장
         gen_codes.append(code_input.numpy())
 
         pbar.set_postfix({'G_loss': G_loss_sum/(batch_idx+1), 'D_loss': D_loss_sum/(batch_idx+1), 'MI': mi_sum/(batch_idx+1)})
@@ -414,8 +361,7 @@ for epoch in range(1, epoch_num+1):
     # M_scheduler.step()
     
     gen_outputs = np.concatenate(gen_outputs, axis=0) # (train_num, n_features)
-
-    gen_codes = np.concatenate(gen_codes, axis=0) # (train_num, code_qubits)
+    gen_codes = np.concatenate(gen_codes, axis=0) # (train_num, code_dim)
 
     D_loss, G_loss, mi = D_loss_sum/batch_num, G_loss_sum/batch_num, mi_sum/batch_num
 
@@ -433,24 +379,24 @@ for epoch in range(1, epoch_num+1):
         p_value_dict[f'{feature_name}_p_value'] = p_value
     
 
-    correlation_matrix = np.zeros((code_qubits, n_features))      # 각 code와 basis state간의 상관관계
-    for i in range(code_qubits):
+    correlation_matrix = np.zeros((code_dim, n_features))      # 각 code와 basis state간의 상관관계
+    for i in range(code_dim):
         for j in range(n_features):
             correlation_matrix[i, j] = np.corrcoef(gen_codes[:, i], gen_outputs[:, j])[0, 1]
             writer.add_scalar(f'Corr/code{i}-{train_data_df.columns[j]}', correlation_matrix[i, j], epoch)
 
     # calculation all angle between correlation_matrix[i, :] and correlation_matrix[j, :]
     angle_sum = 0
-    for i in range(code_qubits):
-        for j in range(i+1, code_qubits):
+    for i in range(code_dim):
+        for j in range(i+1, code_dim):
             cos_theta = np.dot(correlation_matrix[i, :], correlation_matrix[j, :]) / (np.linalg.norm(correlation_matrix[i, :]) * np.linalg.norm(correlation_matrix[j, :]))
             theta_degrees = np.degrees(np.arccos(np.clip(cos_theta, -1.0, 1.0)))
             theta_degrees = min(theta_degrees, 180 - theta_degrees) # 예각으로 변환
             writer.add_scalar(f'Angle/angle{i}-{j}', theta_degrees, epoch)
             angle_sum += theta_degrees
 
-    if code_qubits > 1:
-        angle_avg = angle_sum / (code_qubits * (code_qubits - 1) / 2)
+    if code_dim > 1:
+        angle_avg = angle_sum / (code_dim * (code_dim - 1) / 2)
         writer.add_scalar('Angle/Code_Angle', angle_avg, epoch)
 
     # 스칼라 값 CSV로 덮어쓰기 저장
@@ -463,7 +409,7 @@ for epoch in range(1, epoch_num+1):
         **D_ks_dict,
         **p_value_dict,
         'time': [int((time.time() - start_time)*1000)],
-        **{f'Corr/code{i}-{axis}': [correlation_matrix[i, j]] for i in range(code_qubits) for j, axis in enumerate(train_data_df.columns)},
+        **{f'Corr/code{i}-{axis}': [correlation_matrix[i, j]] for i in range(code_dim) for j, axis in enumerate(train_data_df.columns)},
     })
 
     new_data.to_csv(scalar_save_path, mode='a',  header=not file_exists)
