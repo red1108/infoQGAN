@@ -176,6 +176,16 @@ generator = QGenerator.QGAN2(n_qubits, output_qubits, n_layers, generator_initia
 discriminator = Discriminator.LinearDiscriminator(input_dim = output_qubits, hidden_size=128)
 mine = MINE.LinearMine(code_dim=code_qubits, output_dim=output_qubits)
 
+
+# Function to calculate total trainable parameters
+def count_parameters(model):
+    return sum(p.numel() for p in model.parameters() if p.requires_grad)
+
+# Print total number of trainable parameters
+print(f"Total trainable parameters in Generator: {n_qubits * n_layers}")
+print(f"Total trainable parameters in Discriminator: {count_parameters(discriminator)}")
+print(f"Total trainable parameters in MINE: {count_parameters(mine)}")
+
 G_opt = torch.optim.Adam(generator.parameters(), lr=G_lr)
 D_opt = torch.optim.Adam(discriminator.parameters(), lr=D_lr)
 M_opt = torch.optim.Adam(mine.parameters(), lr=M_lr)
