@@ -64,6 +64,8 @@ D_lr = 0.0003
 M_lr = 0.003
 coeff = 0.05
 
+range_l = 0.15
+range_r = 0.85
 data_legend_num = 3
 
 if __name__ == "__main__":
@@ -82,6 +84,8 @@ if __name__ == "__main__":
     parser.add_argument("--seed_dim", type=int, default=5, help="Generator seed dimension")
 
     parser.add_argument("--epochs", type=int, default=300, help="Number of epochs")
+    parser.add_argument("--range_l", type=float, default=0.15, help="Embedding range left")
+    parser.add_argument("--range_r", type=float, default=0.85, help="Embedding range right")
 
     
     args = parser.parse_args()
@@ -100,6 +104,8 @@ if __name__ == "__main__":
     SEED = args.seed
     SEED_DIM = args.seed_dim
     epoch_num = args.epochs
+    range_l = args.range_l
+    range_r = args.range_r
 
 
     print(f"Use Mine: {use_mine}")
@@ -135,14 +141,20 @@ print(raw_data_df.shape, raw_data_df.columns)
 train_data_df = raw_data_df[numeric_cols]
 train_data_df = train_data_df.drop(columns=['Id'])
 train_data_np = train_data_df.to_numpy()
-train_tensor = torch.tensor(train_data_np, dtype=torch.float32) # 학습에 사용할 텐서
+
+# 학습 데이터셋을 [range_l, range_r] 범위로 rescale
+train_data_np = train_data_df.to_numpy()
+min_val = train_data_np.min(axis=0)
+max_val = train_data_np.max(axis=0)
+rescaled = range_l + (train_data_np - min_val) / (max_val - min_val) * (range_r - range_l)
+train_tensor = torch.tensor(rescaled, dtype=torch.float32) # 학습에 사용할 텐서
 
 # setting torch device
 ml_device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 print("고전 머신러닝 device =", ml_device)
 
 # 생성자 파라미터 초기화 및 모듈 불러오기
-generator = Generator.LinearGenerator(input_dim=SEED_DIM, output_dim=n_features, hidden_size=4)
+generator = Generator.LinearGeneratorSigmoid(input_dim=SEED_DIM, output_dim=n_features, hidden_size=5)
 
 # 판별자, MINE 초기화
 discriminator = Discriminator.LinearDiscriminator(input_dim = n_features, hidden_size=128)
@@ -160,6 +172,17 @@ print(f"Total trainable parameters in MINE: {count_parameters(mine)}")
 G_opt = torch.optim.Adam(generator.parameters(), lr=G_lr)
 D_opt = torch.optim.Adam(discriminator.parameters(), lr=D_lr)
 M_opt = torch.optim.Adam(mine.parameters(), lr=M_lr)
+
+def output_rescale(ret):
+    # 원래 학습 데이터의 각 속성별 최소/최대값 추출
+    train_mins = train_data_df.min()
+    train_maxs = train_data_df.max()
+
+    train_mins_tensor = torch.tensor(train_mins.values, dtype=ret.dtype, device=ret.device)
+    train_maxs_tensor = torch.tensor(train_maxs.values, dtype=ret.dtype, device=ret.device)
+                                     
+    return train_mins_tensor + (ret - range_l) * (train_maxs_tensor - train_mins_tensor) / (range_r-range_l)
+
 
 def generator_train_step(generator_input, use_mine = False):
     code_input = generator_input[:, :code_dim] # 입력중에서 code만 뽑는다. (BATCH_SIZE, code_dim)
@@ -359,7 +382,7 @@ for epoch in range(1, epoch_num+1):
         G_loss_sum += generator_loss.item()
         mi_sum -= mi.item() # (-1)곱해져 있어서 빼야함.
 
-        gen_outputs.append(fake_input.numpy()) # 실제 데이터 범위로 늘린 후 저장
+        gen_outputs.append(output_rescale(fake_input).numpy()) # 실제 데이터 범위로 늘린 후 저장
         gen_codes.append(code_input.numpy())
 
         pbar.set_postfix({'G_loss': G_loss_sum/(batch_idx+1), 'D_loss': D_loss_sum/(batch_idx+1), 'MI': mi_sum/(batch_idx+1)})
