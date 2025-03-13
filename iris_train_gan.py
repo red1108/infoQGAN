@@ -145,7 +145,7 @@ ml_device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 print("고전 머신러닝 device =", ml_device)
 
 # 생성자 파라미터 초기화 및 모듈 불러오기
-generator = Generator.LinearGeneratorSigmoid(input_dim=SEED_DIM, output_dim=n_features, hidden_size=hidden_dim)
+generator = Generator.LinearGenerator(input_dim=SEED_DIM, output_dim=n_features, hidden_size=hidden_dim)
 
 # 판별자, MINE 초기화
 discriminator = Discriminator.LinearDiscriminator(input_dim = n_features, hidden_size=128)

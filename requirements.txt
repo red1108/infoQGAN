@@ -13,3 +13,4 @@ nbconvert       # Converts Jupyter Notebooks to different formats like HTML, PDF
 seaborn
 scikit-learn
 kagglehub
+pennylane-qiskit
