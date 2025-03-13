@@ -153,12 +153,9 @@ train_data_df = train_data_df.drop(columns=['Id'])
 train_data_np = train_data_df.to_numpy()
 
 # 학습 데이터셋을 [range_l, range_r] 범위로 rescale
-
 train_data_np = train_data_df.to_numpy()
 min_val = train_data_np.min(axis=0)
 max_val = train_data_np.max(axis=0)
-
-# range_l ~ range_r 범위로 rescale
 rescaled = range_l + (train_data_np - min_val) / (max_val - min_val) * (range_r - range_l)
 train_tensor = torch.tensor(rescaled, dtype=torch.float32) # 학습에 사용할 텐서
 

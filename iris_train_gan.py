@@ -67,6 +67,7 @@ coeff = 0.05
 range_l = 0.15
 range_r = 0.85
 data_legend_num = 3
+hidden_dim = 5
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Training parameters")
@@ -86,7 +87,7 @@ if __name__ == "__main__":
     parser.add_argument("--epochs", type=int, default=300, help="Number of epochs")
     parser.add_argument("--range_l", type=float, default=0.15, help="Embedding range left")
     parser.add_argument("--range_r", type=float, default=0.85, help="Embedding range right")
-
+    parser.add_argument("--hidden_dim", type=int, default=5, help="Number of epochs")
     
     args = parser.parse_args()
     ARGS = args
@@ -106,6 +107,7 @@ if __name__ == "__main__":
     epoch_num = args.epochs
     range_l = args.range_l
     range_r = args.range_r
+    hidden_dim = args.hidden_dim
 
 
     print(f"Use Mine: {use_mine}")
@@ -119,6 +121,7 @@ if __name__ == "__main__":
     print(f"Discriminator Learning Rate: {D_lr}")
     if use_mine:
         print(f"InfoGAN coefficient: {COEFF}")
+    print(f"hidden dim = {hidden_dim}")
 
 raw_data_df = None
 
