@@ -14,3 +14,8 @@ seaborn
 scikit-learn
 kagglehub
 pennylane-qiskit
+
+# for pennylane-qiskit example
+aiohttp
+h5py
+fsspec
