@@ -25,9 +25,9 @@ class LinearGenerator(nn.Module):
         super().__init__()
         self.layers = nn.Sequential(
             nn.Linear(input_dim, hidden_size),
-            nn.ReLU(),
+            nn.Sigmoid(),
             nn.Linear(hidden_size, hidden_size),
-            nn.ReLU(),
+            nn.Sigmoid(),
             nn.Linear(hidden_size, output_dim)
         )
     
