@@ -10,3 +10,6 @@ matplotlib      # Plotting library, commonly used for visualizing data and resul
 ipython         # Enhanced interactive Python experience, especially within Jupyter Notebooks
 nbformat        # Library for handling notebook file format, used in reading and writing Jupyter Notebooks
 nbconvert       # Converts Jupyter Notebooks to different formats like HTML, PDF for sharing or documentation
+seaborn
+scikit-learn
+kagglehub
