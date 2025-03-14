@@ -5,6 +5,7 @@ test.ipynb
 data/MNIST/raw
 past_runs
 iris_runs
+2d_runs
 정리/
 .env
 
