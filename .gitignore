@@ -1,11 +1,12 @@
 runs
+past_runs
+iris_runs
+2d_runs
+mnist_runs
 visualize/tmp # 여기에 이미지 생성 후, 건질만한 것들 visualize로 이동시켜 주세요.
 venv
 test.ipynb
 data/MNIST/raw
-past_runs
-iris_runs
-2d_runs
 정리/
 .env
 
