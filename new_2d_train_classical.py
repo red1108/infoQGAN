@@ -361,7 +361,7 @@ for epoch in range(1, epoch_num+1):
 
     new_data.to_csv(scalar_save_path, mode='a',  header=not file_exists)
     
-    if epoch % 5 == 4:
+    if epoch % 5 == 0:
         visualize_output_simple(gen_outputs, gen_codes, epoch, writer, image_save_dir) # save fig here
 
     # 각 epoch마다 numpy의 savetxt를 사용하여 저장
