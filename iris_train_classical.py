@@ -296,7 +296,7 @@ def convert_py_to_html(py_file_path, html_file_path):
         f.write(html_code)
 
     print(f"Converted {py_file_path} to {html_file_path} with syntax highlighting.")
-convert_py_to_html('iris_train.py', os.path.join(save_dir, 'iris_train.html'))
+convert_py_to_html('iris_train_classical.py', os.path.join(save_dir, 'iris_train_classical.html'))
 # ==========================================================
 
 # save ARGS in save_dir/args.txt
