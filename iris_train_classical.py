@@ -69,7 +69,7 @@ hidden_dim = 5
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Training parameters")
-    parser.add_argument("--model_type", choices=['InfoGAN', 'GAN'], required=True, help="Model type to use: InfoQGAN or QGAN")
+    parser.add_argument("--model_type", choices=['InfoGAN', 'GAN'], required=True, help="Model type to use: InfoGAN or GAN")
     parser.add_argument("--data_type", choices=['IRIS', 'WINE'], required=True, help="Data type to use")
 
     parser.add_argument("--code_dim", type=int, default=1, help="Dimension of latent code")

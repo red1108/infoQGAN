@@ -362,7 +362,8 @@ for epoch in range(1, epoch_num+1):
 
     new_data.to_csv(scalar_save_path, mode='a',  header=not file_exists)
     
-    visualize_output_simple(gen_outputs, gen_codes, epoch, writer, image_save_dir) # save fig here
+    if epoch % 5 == 4:
+        visualize_output_simple(gen_outputs, gen_codes, epoch, writer, image_save_dir) # save fig here
 
     # 각 epoch마다 numpy의 savetxt를 사용하여 저장
     output_file_path = os.path.join(numpy_save_dir, f"gen_outputs_epoch_{epoch}.txt")
@@ -370,7 +371,7 @@ for epoch in range(1, epoch_num+1):
 
     np.savetxt(output_file_path, gen_outputs)
     np.savetxt(codes_file_path, gen_codes)
-    torch.save(generator.params, f'{param_save_dir}/generator_params_epoch{epoch}.pth') # QGAN 파라미터 저장
+    torch.save(generator.state_dict(), f'{param_save_dir}/generator_params_epoch{epoch}.pth') # QGAN 파라미터 저장
     
     #print("epoch: {}, D_loss: {}, G_loss: {}, MI = {}".format(epoch, D_loss, G_loss, mi))
     #print("좌표값 평균 = ", np.mean(gen_outputs[:,0]), np.mean(gen_outputs[:,1]), "디버그 =", generator.params[0][0][0].item())
