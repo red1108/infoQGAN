@@ -202,10 +202,9 @@ def visualize_output_simple(log_gen_outputs, log_gen_codes, epoch, writer, image
     writer.add_figure(f'Code 2 Color', fig3, epoch)
 
     # fig1, fig2, fig3 를 image file로 저장
-    if epoch % 5 == 0:
-        fig1.savefig(f'{image_file_path}/dist_epoch_{epoch}.png')
-        fig2.savefig(f'{image_file_path}/code1_epoch_{epoch}.png')
-        fig3.savefig(f'{image_file_path}/code2_epoch_{epoch}.png')
+    fig1.savefig(f'{image_file_path}/dist_epoch_{epoch}.png')
+    fig2.savefig(f'{image_file_path}/code1_epoch_{epoch}.png')
+    fig3.savefig(f'{image_file_path}/code2_epoch_{epoch}.png')
 
     # 메모리 관리를 위해 plt를 닫음
     plt.close(fig1)
