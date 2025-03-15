@@ -221,7 +221,7 @@ def visualize_output_simple(log_gen_outputs, log_gen_codes, epoch, writer, image
     plt.close(fig3)
 
 current_time = datetime.now().strftime("%b%d_%H_%M_%S")  # "Aug13_14_12" 형식
-base_name = f'{use_mine}_sd{SEED_DIM}_hd{hidden_dim}_{data_type}_{current_time}'
+base_name = f'{train_type}_sd{SEED_DIM}_hd{hidden_dim}_{data_type}_{current_time}'
 save_dir = f"./2d_runs/{base_name}"
 scalar_save_path = os.path.join(save_dir, f"{base_name}.csv")
 image_save_dir = os.path.join(save_dir, "images")
