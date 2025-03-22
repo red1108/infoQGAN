@@ -1,0 +1,14 @@
+runs
+past_runs
+iris_runs
+2d_runs
+venv
+research
+.env
+
+# cache
+__pycache__/
+**/__pycache__/
+
+# DS_Store
+.DS_Store

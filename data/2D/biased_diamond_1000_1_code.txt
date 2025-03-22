@@ -1,0 +1,22 @@
+    def generate_biased_diamond(self):
+        # 중심과 팔 길이 설정
+        center_x, center_y = 0.6, 0.6
+        arm_length = 0.2
+        
+        # 기본 사각형 좌표 생성 (x, y) 범위는 (0.4, 0.8)로 설정
+        xx = np.random.uniform(center_x - arm_length, center_x + arm_length, self.data_num)
+        yy = np.random.uniform(center_y - arm_length, center_y + arm_length, self.data_num)
+        
+        # 다이아몬드 분포로 만들기 위해 45도 회전 변환을 적용
+        # 회전 변환 행렬: [[cos(45도), -sin(45도)], [sin(45도), cos(45도)]]
+        theta = np.radians(45)
+        rotation_matrix = np.array([[np.cos(theta), -np.sin(theta)], 
+                                    [np.sin(theta),  np.cos(theta)]])
+        
+        # 좌표를 중심 기준으로 변환하기 위해 중심에서 빼고 회전 후 다시 더함
+        coords = np.vstack((xx - center_x, yy - center_y))  # 중심 이동
+        rotated_coords = np.dot(rotation_matrix, coords)    # 45도 회전
+        xx_rotated, yy_rotated = rotated_coords[0] + center_x, rotated_coords[1] + center_y  # 다시 중심으로 복원
+        
+        # 남은 데이터를 셔플해서 반환
+        return self._combine_and_shuffle(xx_rotated, yy_rotated)

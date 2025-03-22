@@ -1,0 +1,16 @@
+torch           # PyTorch, a deep learning library for building and training neural networks
+tqdm            # Utility for displaying progress bars, useful in tracking loops and training progress
+tensorboard     # Tool for tracking, visualizing metrics, and monitoring training of models
+pennylane       # Quantum machine learning library for implementing quantum algorithms
+argparse        # Built-in library for parsing command-line arguments to configure script execution
+scipy           # Scientific computing library, providing functions like sqrtm for matrix operations
+pygments        # Syntax highlighting tool, helpful for exporting syntax-highlighted HTML code
+pandas          # Data manipulation library, essential for data analysis and preprocessing
+matplotlib      # Plotting library, commonly used for visualizing data and results from models
+ipython         # Enhanced interactive Python experience, especially within Jupyter Notebooks
+nbformat        # Library for handling notebook file format, used in reading and writing Jupyter Notebooks
+nbconvert       # Converts Jupyter Notebooks to different formats like HTML, PDF for sharing or documentation
+seaborn
+scikit-learn
+kagglehub
+pennylane-qiskit
