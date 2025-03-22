@@ -1,0 +1,16 @@
+{
+    "model_type": "GAN",
+    "data_type": "IRIS",
+    "data_type_rep": 1,
+    "code_dim": 2,
+    "G_lr": 0.001,
+    "M_lr": 0.001,
+    "D_lr": 0.0002,
+    "coeff": 0.04,
+    "seed": 50.0,
+    "seed_dim": 5,
+    "epochs": 500,
+    "range_l": 0.15,
+    "range_r": 0.85,
+    "hidden_dim": 6
+}

@@ -1,0 +1,16 @@
+{
+    "model_type": "QGAN",
+    "data_type": "IRIS",
+    "data_type_rep": 1,
+    "n_qubits": 5,
+    "code_qubits": 2,
+    "n_layers": 20,
+    "G_lr": 0.003,
+    "M_lr": 0.003,
+    "D_lr": 0.0003,
+    "coeff": 0.04,
+    "seed": 1.0,
+    "epochs": 500,
+    "range_l": 0.15,
+    "range_r": 0.85
+}
