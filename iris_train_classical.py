@@ -35,7 +35,7 @@ from functools import reduce
 from datetime import datetime
 import os
 import time
-from modules.utils import categorical_distribution, combined_tsne, convert_ipynb_to_html, map_category_with_tolerance # 현재 html파일 저장을 위해 사용
+from modules.utils import categorical_distribution, combined_tsne, convert_ipynb_to_html, convert_py_to_html, map_category_with_tolerance # 현재 html파일 저장을 위해 사용
 import argparse
 import json
 from scipy.stats import ks_2samp
@@ -222,9 +222,6 @@ def disc_cost_fn(real_input, fake_input, smoothing=False):
     
     return loss
 
-
-
-
 def visualize_output_augment(log_gen_outputs, log_gen_codes, epoch, writer, image_file_path):
     # 1. 첫 번째 플롯: 출력의 hisplot
     fig1 = plt.figure(figsize=(10, 10))
@@ -274,24 +271,8 @@ os.makedirs(numpy_save_dir, exist_ok=True)
 os.makedirs(param_save_dir, exist_ok=True)
 
 
-# ======================파이썬 코드를 html 로 만듦=======================
-from pygments import highlight
-from pygments.lexers import PythonLexer
-from pygments.formatters import HtmlFormatter
-
-def convert_py_to_html(py_file_path, html_file_path):
-    """Converts a Python script to a syntax-highlighted HTML file."""
-    with open(py_file_path, 'r', encoding='utf-8') as f:
-        code = f.read()
-
-    html_code = highlight(code, PythonLexer(), HtmlFormatter(full=True, linenos=True))
-    
-    with open(html_file_path, 'w', encoding='utf-8') as f:
-        f.write(html_code)
-
-    print(f"Converted {py_file_path} to {html_file_path} with syntax highlighting.")
-convert_py_to_html('iris_train_classical_sigmoid.py', os.path.join(save_dir, 'iris_train_classical_sigmoid.html'))
-# ==========================================================
+# ==================Convert code to HTML================
+convert_py_to_html('iris_train_classical.py', os.path.join(save_dir, 'iris_train_classical.html'))
 
 # save ARGS in save_dir/args.txt
 with open(os.path.join(save_dir, 'args.txt'), 'w') as f:

@@ -29,7 +29,7 @@ import ndtest # 2D 분포 검정에 사용
 from datetime import datetime
 import os
 import time
-from modules.utils import convert_ipynb_to_html # 현재 html파일 저장을 위해 사용
+from modules.utils import convert_ipynb_to_html, convert_py_to_html # 현재 html파일 저장을 위해 사용
 import argparse
 import json
 
@@ -231,23 +231,8 @@ os.makedirs(image_save_dir, exist_ok=True)
 os.makedirs(numpy_save_dir, exist_ok=True)
 os.makedirs(param_save_dir, exist_ok=True)
 
-# ======================파이썬 코드를 html 로 만듦=======================
-from pygments import highlight
-from pygments.lexers import PythonLexer
-from pygments.formatters import HtmlFormatter
-
-def convert_py_to_html(py_file_path, html_file_path):
-    """Converts a Python script to a syntax-highlighted HTML file."""
-    with open(py_file_path, 'r', encoding='utf-8') as f:
-        code = f.read()
-
-    html_code = highlight(code, PythonLexer(), HtmlFormatter(full=True, linenos=True))
-    
-    with open(html_file_path, 'w', encoding='utf-8') as f:
-        f.write(html_code)
-
-    print(f"Converted {py_file_path} to {html_file_path} with syntax highlighting.")
-convert_py_to_html('new_2d_train_classical.py', os.path.join(save_dir, 'new_2d_train_classical.html'))
+# ==================Convert code to HTML================
+convert_py_to_html('2d_train_classical.py', os.path.join(save_dir, '2d_train_classical.html'))
 # ==========================================================
 
 # save ARGS in save_dir/args.txt

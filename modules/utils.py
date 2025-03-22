@@ -5,6 +5,10 @@ import numpy as np
 import pandas as pd
 import torch
 import json
+from pygments import highlight
+from pygments.lexers import PythonLexer
+from pygments.formatters import HtmlFormatter
+
 
 def convert_ipynb_to_html(ipynb_file_path, output_html_path):
     # ipynb 파일 로드
@@ -23,6 +27,18 @@ def convert_ipynb_to_html(ipynb_file_path, output_html_path):
     
     print(f"HTML 파일이 {output_html_path}에 저장되었습니다.")
 
+
+def convert_py_to_html(py_file_path, html_file_path):
+    """Converts a Python script to a syntax-highlighted HTML file."""
+    with open(py_file_path, 'r', encoding='utf-8') as f:
+        code = f.read()
+
+    html_code = highlight(code, PythonLexer(), HtmlFormatter(full=True, linenos=True))
+    
+    with open(html_file_path, 'w', encoding='utf-8') as f:
+        f.write(html_code)
+
+    print(f"Converted {py_file_path} to {html_file_path} with syntax highlighting.")
 
 def generate_orthonormal_states(dim, m, mode="complex"):
     assert dim >= m, "dim >= number of orthogonal states"

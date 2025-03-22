@@ -35,7 +35,7 @@ from functools import reduce
 from datetime import datetime
 import os
 import time
-from modules.utils import categorical_distribution, combined_tsne, convert_ipynb_to_html, map_category_with_tolerance # 현재 html파일 저장을 위해 사용
+from modules.utils import categorical_distribution, combined_tsne, convert_ipynb_to_html, convert_py_to_html, map_category_with_tolerance # 현재 html파일 저장을 위해 사용
 import argparse
 import json
 from scipy.stats import ks_2samp
@@ -165,7 +165,7 @@ print("고전 머신러닝 device =", ml_device, "양자 회로 backend =", quan
 
 # 생성자 파라미터 초기화 및 모듈 불러오기
 generator_initial_params = Variable(torch.tensor(np.random.normal(-np.pi , np.pi, (n_layers, n_qubits, 1))), requires_grad=True)
-generator = QGenerator.QGAN2(n_qubits, output_qubits, n_layers, generator_initial_params, quantum_device)
+generator = QGenerator.QGenerator(n_qubits, output_qubits, n_layers, generator_initial_params, quantum_device)
 
 # 판별자, MINE 초기화
 discriminator = Discriminator.LinearDiscriminator(input_dim = output_qubits, hidden_size=128)
@@ -298,22 +298,7 @@ os.makedirs(numpy_save_dir, exist_ok=True)
 os.makedirs(param_save_dir, exist_ok=True)
 
 
-# ======================파이썬 코드를 html 로 만듦=======================
-from pygments import highlight
-from pygments.lexers import PythonLexer
-from pygments.formatters import HtmlFormatter
-
-def convert_py_to_html(py_file_path, html_file_path):
-    """Converts a Python script to a syntax-highlighted HTML file."""
-    with open(py_file_path, 'r', encoding='utf-8') as f:
-        code = f.read()
-
-    html_code = highlight(code, PythonLexer(), HtmlFormatter(full=True, linenos=True))
-    
-    with open(html_file_path, 'w', encoding='utf-8') as f:
-        f.write(html_code)
-
-    print(f"Converted {py_file_path} to {html_file_path} with syntax highlighting.")
+# ==================Convert code to HTML================
 convert_py_to_html('iris_train.py', os.path.join(save_dir, 'iris_train.html'))
 # ==========================================================
 
