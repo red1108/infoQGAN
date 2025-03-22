@@ -1,0 +1,14 @@
+{
+    "model_type": "GAN",
+    "data_num": 1000,
+    "data_type": "biased_diamond",
+    "seed": 0.5,
+    "seed_dim": 5,
+    "code_dim": 2,
+    "G_lr": 0.002,
+    "M_lr": 0.002,
+    "D_lr": 0.0005,
+    "coeff": 0.2,
+    "epochs": 300,
+    "hidden_dim": 4
+}

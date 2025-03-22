@@ -1,0 +1,14 @@
+{
+    "model_type": "QGAN",
+    "data_num": 1000,
+    "data_type": "biased_diamond",
+    "n_qubits": 5,
+    "code_qubits": 2,
+    "n_layers": 10,
+    "G_lr": 0.001,
+    "M_lr": 0.001,
+    "D_lr": 0.0005,
+    "coeff": 0.2,
+    "seed": 0.5,
+    "epochs": 300
+}
