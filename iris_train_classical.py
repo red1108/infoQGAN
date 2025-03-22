@@ -203,7 +203,7 @@ def generator_train_step(generator_input, use_mine = False):
         mi = torch.mean(pred_xy) - torch.log(torch.mean(torch.exp(pred_x_y)))
         gan_loss -= coeff * mi
 
-    return generator_output, gan_loss# TODO: 이건 분석용으로 넣어놓음.지워야 함.
+    return generator_output, gan_loss
 
 disc_loss_fn = nn.BCELoss()
 def disc_cost_fn(real_input, fake_input, smoothing=False):
@@ -306,8 +306,7 @@ for epoch in range(1, epoch_num+1):
 
     for batch_idx, (batch,) in enumerate(pbar):  # batch unpacking
         # train generator
-        #TODO: 불연속 데이터로 code input 주자.
-        generator_seed = torch.empty((BATCH_SIZE, SEED_DIM)).uniform_(-SEED, SEED).to(ml_device) # 실제 범위 = +-SEED * np.pi/2.
+        generator_seed = torch.empty((BATCH_SIZE, SEED_DIM)).uniform_(-SEED, SEED).to(ml_device)
         generator_seed[:, 0] = categorical_distribution(-SEED, SEED, data_legend_num, BATCH_SIZE)
         generator_output, generator_loss = generator_train_step(generator_seed, use_mine=use_mine)
         G_opt.zero_grad()

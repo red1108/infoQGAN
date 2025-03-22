@@ -20,7 +20,7 @@ class QGenerator:
         
     def init_circuit(self, generator_input):
         for i in range(self.n_qubits):
-            qml.RY(generator_input[i]*np.pi/2, wires=i) # TODO: *a 해서 값 범위 맞추기
+            qml.RY(generator_input[i]*np.pi/2, wires=i)
         
     def single_layer(self, params, last=False):
         for i in range(self.n_qubits):

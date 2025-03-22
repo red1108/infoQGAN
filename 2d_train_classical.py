@@ -159,7 +159,7 @@ def generator_train_step(generator_input, use_mine = False):
         mi = torch.mean(pred_xy) - torch.log(torch.mean(torch.exp(pred_x_y)))
         gan_loss -= coeff * mi
 
-    return generator_output, gan_loss# TODO: 이건 분석용으로 넣어놓음.지워야 함.
+    return generator_output, gan_loss
 
 disc_loss_fn = nn.BCELoss()
 def disc_cost_fn(real_input, fake_input, smoothing=False):
